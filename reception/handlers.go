@@ -13,13 +13,6 @@ type newOrder struct {
 	Customer string `json:"customer"`
 }
 
-type existingOrder struct {
-	Pastry   string `json:"pastry"`
-	Customer string `json:"customer"`
-	OrderID  string `json:"orderId"`
-	Status   string `json:"status"`
-}
-
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")

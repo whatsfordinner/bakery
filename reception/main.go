@@ -26,6 +26,7 @@ func buildRouter() *mux.Router {
 }
 
 func runServer(router *mux.Router) {
+	// This is taken wholesale from the gorilla/mux README
 	server := &http.Server{
 		Addr:         "0.0.0.0:8000",
 		WriteTimeout: time.Second * 15,
