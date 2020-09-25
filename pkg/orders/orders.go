@@ -1,5 +1,9 @@
 package orders
 
+import (
+	"github.com/google/uuid"
+)
+
 // An Order represents all the details of a customer's order
 type Order struct {
 	Pastry   string `json:"pastry"`
@@ -8,28 +12,24 @@ type Order struct {
 	Status   string `json:"status"`
 }
 
-// GetOrderID returns a hash to be used as the key in the DB
-func GetOrderID(customer string, pastry string) string {
-	return ""
+// ToSlice returns a slice of strings for use with radix commands
+func (o *Order) ToSlice() []string {
+	return []string{"Pastry", o.Pastry, "Customer", o.Customer, "OrderID", o.OrderID, "Status", o.Status}
 }
 
-// NewOrder generates a new Order, writes it to the DB and returns a *Order
+// NewOrder takes a customer and a pastry and returns an *Order
 func NewOrder(customer string, pastry string) (*Order, error) {
+	orderUUID, err := uuid.NewRandom()
+
+	if err != nil {
+		return nil, err
+	}
+
 	order := new(Order)
-	order.OrderID = GetOrderID(customer, pastry)
+	order.OrderID = string(orderUUID[:])
 	order.Customer = customer
 	order.Pastry = pastry
 	order.Status = "pending"
 
 	return order, nil
-}
-
-// UpdateOrder changes that status of an order with the matching ID
-func UpdateOrder(orderID string, status string) error {
-	return nil
-}
-
-// GetOrder returns a *Order with the data matching the provided order ID
-func GetOrder(orderID string) (*Order, error) {
-	return new(Order), nil
 }
