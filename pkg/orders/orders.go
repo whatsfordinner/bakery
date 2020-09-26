@@ -13,12 +13,12 @@ type Order struct {
 }
 
 // NewOrder takes a customer and a pastry and returns an *Order
-func NewOrder(customer string, pastry string) (*Order, error) {
+func NewOrder(customer string, pastry string) *Order {
 	order := new(Order)
 	order.Customer = customer
 	order.OrderTime = time.Now().Format(time.RFC3339)
 	order.Pastry = pastry
 	order.Status = "pending"
 
-	return order, nil
+	return order
 }
