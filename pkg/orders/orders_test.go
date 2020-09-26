@@ -3,35 +3,8 @@ package orders
 import (
 	"reflect"
 	"testing"
-
-	"github.com/google/uuid"
+	"time"
 )
-
-func TestToSlice(t *testing.T) {
-	tests := map[string]struct {
-		expected []string
-		object   *Order
-	}{
-		"uninitialised order": {
-			[]string{"Pastry", "", "Customer", "", "OrderID", "", "Status", ""},
-			new(Order),
-		},
-		"initialised order": {
-			[]string{"Pastry", "cookie", "Customer", "foobar", "OrderID", "some-uuid", "Status", "radical"},
-			&Order{"cookie", "foobar", "some-uuid", "radical"},
-		},
-	}
-
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			result := test.object.ToSlice()
-
-			if !reflect.DeepEqual(result, test.expected) {
-				t.Fatalf("Results did not match.\nGot:%+v\nExpected:%+v", result, test.expected)
-			}
-		})
-	}
-}
 
 func TestNewOrder(t *testing.T) {
 	tests := map[string]struct {
@@ -41,7 +14,7 @@ func TestNewOrder(t *testing.T) {
 		shouldErr bool
 	}{
 		"valid order": {
-			&Order{"cookie", "foobar", "some-uuid", "pending"},
+			&Order{"cookie", "foobar", "some-time", "pending"},
 			"foobar",
 			"cookie",
 			false,
@@ -60,15 +33,15 @@ func TestNewOrder(t *testing.T) {
 				t.Fatalf("Expected error but got none")
 			}
 
-			// Check that a valid UUID has been provided
-			_, err = uuid.Parse(result.OrderID)
+			// Check that a valid time has been provided
+			_, err = time.Parse(time.RFC3339, result.OrderTime)
 
 			if err != nil {
-				t.Fatalf("Invalid UUID in object: %s. %s", result.OrderID, err.Error())
+				t.Fatalf("Invalid time in object: %s. %s", result.OrderTime, err.Error())
 			}
 
 			// Update the OrderID to something so we can use reflect
-			result.OrderID = "some-uuid"
+			result.OrderTime = "some-time"
 
 			if !reflect.DeepEqual(result, test.expected) {
 				t.Fatalf("Results did not match.\nGot:%+v\nExpected:%+v", result, test.expected)

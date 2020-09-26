@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"crypto/md5"
 	"fmt"
 
 	"github.com/mediocregopher/radix/v3"
@@ -34,41 +35,53 @@ func (db *OrderDB) Disconnect() error {
 	return nil
 }
 
-// CreateOrder writes a full hash to Redis
-func (db *OrderDB) CreateOrder(order *Order) error {
-	err := db.Pool.Do(radix.FlatCmd(nil, "HSET", order.OrderID, order.ToSlice()))
+// CreateOrder writes a full hash to Redis and returns the key
+func (db *OrderDB) CreateOrder(order *Order) (string, error) {
+	key := makeKey(order)
+	err := db.Pool.Do(radix.FlatCmd(nil, "HSET", key, *order))
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return key, nil
 }
 
 // ReadOrder returns the *Order associated with the provided orderID or an error
-func (db *OrderDB) ReadOrder(orderID string) (*Order, error) {
+func (db *OrderDB) ReadOrder(orderKey string) (*Order, error) {
 	order := new(Order)
-	err := db.Pool.Do(radix.Cmd(order, "HGETALL", orderID))
+	err := db.Pool.Do(radix.Cmd(order, "HGETALL", orderKey))
 
 	if err != nil {
 		return nil, err
 	}
 
 	if order.Customer == "" {
-		return nil, fmt.Errorf("order with ID %s not found", orderID)
+		return nil, nil
 	}
 
 	return order, nil
 }
 
 // UpdateOrder updates the status of an order in Redis
-func (db *OrderDB) UpdateOrder(orderID string, newStatus string) error {
+func (db *OrderDB) UpdateOrder(orderKey string, newStatus string) error {
 	// Check that the order exists first
-	_, err := db.ReadOrder(orderID)
+	order, err := db.ReadOrder(orderKey)
 
 	if err != nil {
-		return fmt.Errorf("order with ID %s not found", orderID)
+		return err
 	}
 
-	return db.Pool.Do(radix.Cmd(nil, "HSET", orderID, "Status", newStatus))
+	if order == nil {
+		return fmt.Errorf("Order with key %s does not exist", orderKey)
+	}
+
+	return db.Pool.Do(radix.Cmd(nil, "HSET", orderKey, "Status", newStatus))
+}
+
+func makeKey(order *Order) string {
+	hashInput := []byte(order.Customer + order.Pastry + order.OrderTime)
+	hash := md5.Sum(hashInput)
+
+	return fmt.Sprintf("%x", hash)
 }

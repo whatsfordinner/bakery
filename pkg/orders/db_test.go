@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -69,8 +70,55 @@ func TestDisconnect(t *testing.T) {
 }
 
 func TestCreateOrder(t *testing.T) {
-	tearDown := setUp()
-	defer tearDown()
+	tests := map[string]struct {
+		input     *Order
+		shouldErr bool
+	}{
+		"new order": {
+			&Order{"brioche", "casey", "order5", "pending"},
+			false,
+		},
+		"overwriting order": {
+			&Order{"panini", "omar", "order3", "complete"},
+			false,
+		},
+	}
+
+	db := new(OrderDB)
+	err := db.Connect("127.0.0.1:6379")
+
+	if err != nil {
+		panic(err)
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			tearDown := setUp()
+			defer tearDown()
+
+			key, err := db.CreateOrder(test.input)
+
+			if err != nil && !test.shouldErr {
+				t.Fatalf("Expected no error but got %s", err.Error())
+			}
+
+			if err == nil && test.shouldErr {
+				t.Fatalf("Expected errer but got no error")
+			}
+
+			if err == nil && !test.shouldErr {
+				result, err := db.ReadOrder(key)
+
+				if err != nil {
+					t.Fatalf("Error while validting created order: %s", err.Error())
+				}
+
+				if !reflect.DeepEqual(result, test.input) {
+					t.Fatalf("Read object does not match input object.\nGot: %+v\nExpected: %+v", result, test.input)
+				}
+			}
+		})
+	}
 }
 
 func TestReadOrder(t *testing.T) {
@@ -80,14 +128,14 @@ func TestReadOrder(t *testing.T) {
 		shouldErr bool
 	}{
 		"existing order": {
-			&Order{"cookie", "dina", "order1", "pending"},
-			"order1",
+			&Order{"cookie", "dina", "time1", "pending"},
+			"order0",
 			false,
 		},
 		"non-existent order": {
 			nil,
 			"fakeorder",
-			true,
+			false,
 		},
 	}
 
@@ -125,9 +173,9 @@ func TestUpdateOrder(t *testing.T) {}
 
 func setUp() func() {
 	orders := []*Order{
-		{"cookie", "dina", "order1", "pending"},
-		{"brownie", "claude", "order2", "complete"},
-		{"panini", "omar", "order3", "pending"},
+		{"cookie", "dina", "time1", "pending"},
+		{"brownie", "claude", "time2", "complete"},
+		{"panini", "omar", "time3", "pending"},
 	}
 	db, err := radix.NewPool("tcp", "127.0.0.1:6379", 1)
 
@@ -135,8 +183,8 @@ func setUp() func() {
 		panic(err)
 	}
 
-	for _, order := range orders {
-		err = db.Do(radix.FlatCmd(nil, "HSET", order.OrderID, order.ToSlice()))
+	for i, order := range orders {
+		err = db.Do(radix.FlatCmd(nil, "HSET", fmt.Sprintf("order%d", i), *order))
 
 		if err != nil {
 			panic(err)
@@ -144,8 +192,10 @@ func setUp() func() {
 	}
 
 	return func() {
-		for _, order := range orders {
-			err = db.Do(radix.Cmd(nil, "DEL", order.OrderID))
+		keys := []string{}
+		err = db.Do(radix.Cmd(&keys, "KEYS", "*"))
+		for _, key := range keys {
+			err = db.Do(radix.Cmd(nil, "DEL", key))
 
 			if err != nil {
 				panic(err)
