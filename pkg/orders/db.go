@@ -23,8 +23,19 @@ func (db *OrderDB) Connect(host string) error {
 	return nil
 }
 
-// WriteOrder writes a full hash to Redis
-func (db *OrderDB) WriteOrder(order *Order) error {
+// Disconnect closes the connection pool
+func (db *OrderDB) Disconnect() error {
+	err := db.Pool.Close()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CreateOrder writes a full hash to Redis
+func (db *OrderDB) CreateOrder(order *Order) error {
 	err := db.Pool.Do(radix.FlatCmd(nil, "HSET", order.OrderID, order.ToSlice()))
 
 	if err != nil {
@@ -34,10 +45,10 @@ func (db *OrderDB) WriteOrder(order *Order) error {
 	return nil
 }
 
-// FetchOrder returns the *Order associated with the provided orderID or an error
-func (db *OrderDB) FetchOrder(orderID string) (*Order, error) {
+// ReadOrder returns the *Order associated with the provided orderID or an error
+func (db *OrderDB) ReadOrder(orderID string) (*Order, error) {
 	order := new(Order)
-	err := db.Pool.Do(radix.Cmd(&order, "HGETALL", orderID))
+	err := db.Pool.Do(radix.Cmd(order, "HGETALL", orderID))
 
 	if err != nil {
 		return nil, err
@@ -53,7 +64,7 @@ func (db *OrderDB) FetchOrder(orderID string) (*Order, error) {
 // UpdateOrder updates the status of an order in Redis
 func (db *OrderDB) UpdateOrder(orderID string, newStatus string) error {
 	// Check that the order exists first
-	_, err := db.FetchOrder(orderID)
+	_, err := db.ReadOrder(orderID)
 
 	if err != nil {
 		return fmt.Errorf("order with ID %s not found", orderID)
