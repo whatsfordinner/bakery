@@ -91,6 +91,8 @@ func TestCreateOrder(t *testing.T) {
 		panic(err)
 	}
 
+	defer db.Disconnect()
+
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			tearDown := setUp()
@@ -124,7 +126,7 @@ func TestCreateOrder(t *testing.T) {
 func TestReadOrder(t *testing.T) {
 	tests := map[string]struct {
 		expected  *Order
-		orderID   string
+		orderKey  string
 		shouldErr bool
 	}{
 		"existing order": {
@@ -146,13 +148,14 @@ func TestReadOrder(t *testing.T) {
 		panic(err)
 	}
 
-	for name, test := range tests {
+	defer db.Disconnect()
 
+	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			tearDown := setUp()
 			defer tearDown()
 
-			result, err := db.ReadOrder(test.orderID)
+			result, err := db.ReadOrder(test.orderKey)
 
 			if err != nil && !test.shouldErr {
 				t.Fatalf("Expected no error but got %s", err.Error())
@@ -169,7 +172,62 @@ func TestReadOrder(t *testing.T) {
 	}
 }
 
-func TestUpdateOrder(t *testing.T) {}
+func TestUpdateOrder(t *testing.T) {
+	tests := map[string]struct {
+		expected  *Order
+		orderKey  string
+		shouldErr bool
+	}{
+		"existing order": {
+			&Order{"brownie", "claude", "time2", "testing"},
+			"order1",
+			false,
+		},
+		"non-existent order": {
+			nil,
+			"fakeorder",
+			true,
+		},
+	}
+
+	db := new(OrderDB)
+	err := db.Connect("127.0.0.1:6379")
+
+	if err != nil {
+		panic(err)
+	}
+
+	defer db.Disconnect()
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			tearDown := setUp()
+			defer tearDown()
+
+			err = db.UpdateOrder(test.orderKey, "testing")
+
+			if err != nil && !test.shouldErr {
+				t.Fatalf("Expected no error but got %s", err.Error())
+			}
+
+			if err == nil && test.shouldErr {
+				t.Fatalf("Expected error but got no error")
+			}
+
+			if err == nil && !test.shouldErr {
+				result, err := db.ReadOrder(test.orderKey)
+
+				if err != nil {
+					t.Fatalf("Error while validating updated order: %s", err.Error())
+				}
+
+				if !reflect.DeepEqual(result, test.expected) {
+					t.Fatalf("Results did not match.\nGot: %+v\nExpected: %+v", result, test.expected)
+				}
+			}
+		})
+	}
+}
 
 func setUp() func() {
 	orders := []*Order{
@@ -192,6 +250,7 @@ func setUp() func() {
 	}
 
 	return func() {
+		defer db.Close()
 		keys := []string{}
 		err = db.Do(radix.Cmd(&keys, "KEYS", "*"))
 		for _, key := range keys {
@@ -202,6 +261,5 @@ func setUp() func() {
 			}
 		}
 
-		defer db.Close()
 	}
 }
