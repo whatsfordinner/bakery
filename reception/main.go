@@ -9,20 +9,33 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/whatsfordinner/bakery/pkg/orders"
 )
 
+type app struct {
+	Router *mux.Router
+	DB     *orders.OrderDB
+}
+
 func main() {
-	router := buildRouter()
-	runServer(router)
+	app := new(app)
+	app.init()
+	defer app.DB.Disconnect()
+	runServer(app.Router)
 	os.Exit(0)
 }
 
-func buildRouter() *mux.Router {
-	r := mux.NewRouter()
-	r.HandleFunc("/", homeHandler)
-	r.HandleFunc("/orders", newOrderHandler)
+func (a *app) init() {
+	a.DB = new(orders.OrderDB)
+	a.DB.Connect("127.0.0.1:6379")
+	a.buildRouter()
+}
 
-	return r
+func (a *app) buildRouter() {
+	a.Router = mux.NewRouter()
+	a.Router.HandleFunc("/", a.homeHandler).Methods("GET")
+	a.Router.HandleFunc("/orders", a.newOrderHandler).Methods("POST")
+	a.Router.HandleFunc("/orders/{key}", a.orderStatusHandler).Methods("GET")
 }
 
 func runServer(router *mux.Router) {

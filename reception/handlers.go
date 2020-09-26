@@ -6,6 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
+	"github.com/whatsfordinner/bakery/pkg/orders"
 )
 
 type newOrder struct {
@@ -13,18 +16,17 @@ type newOrder struct {
 	Customer string `json:"customer"`
 }
 
-func homeHandler(w http.ResponseWriter, r *http.Request) {
+type acceptedOrder struct {
+	OrderKey string `json:"orderKey"`
+}
+
+func (a *app) homeHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	io.WriteString(w, "{\"message\":\"reception is attended\"}")
 }
 
-func newOrderHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
+func (a *app) newOrderHandler(w http.ResponseWriter, r *http.Request) {
 	orderBytes, err := ioutil.ReadAll(r.Body)
 
 	if err != nil {
@@ -32,17 +34,59 @@ func newOrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var order newOrder
-	err = json.Unmarshal(orderBytes, &order)
+	orderData := new(newOrder)
+	err = json.Unmarshal(orderBytes, orderData)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	log.Printf("New order received. Customer: %s, Pastry: %s", order.Customer, order.Pastry)
+	log.Printf("New order received. Customer: %s, Pastry: %s", orderData.Customer, orderData.Pastry)
+
+	order := orders.NewOrder(orderData.Customer, orderData.Pastry)
+	key, err := a.DB.CreateOrder(order)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	result, err := json.Marshal(acceptedOrder{key})
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+	w.Header().Set("Content-Type", "application/json")
+	io.WriteString(w, string(result))
 }
 
-func orderStatusHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
+func (a *app) orderStatusHandler(w http.ResponseWriter, r *http.Request) {
+	orderKey := mux.Vars(r)["key"]
+
+	order, err := a.DB.ReadOrder(orderKey)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if order == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	result, err := json.Marshal(*order)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	io.WriteString(w, string(result))
 }
