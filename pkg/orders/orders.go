@@ -26,7 +26,7 @@ func NewOrder(customer string, pastry string) (*Order, error) {
 	}
 
 	order := new(Order)
-	order.OrderID = string(orderUUID[:])
+	order.OrderID = orderUUID.String()
 	order.Customer = customer
 	order.Pastry = pastry
 	order.Status = "pending"
