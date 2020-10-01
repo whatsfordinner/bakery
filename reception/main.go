@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -9,33 +10,28 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/whatsfordinner/bakery/pkg/orders"
 )
 
-type app struct {
-	Router *mux.Router
-	DB     *orders.OrderDB
+type config struct {
+	DBHost *string
 }
 
 func main() {
+	c := getConfig()
+
 	app := new(app)
-	app.init()
+	app.init(c)
 	defer app.DB.Disconnect()
 	runServer(app.Router)
+
 	os.Exit(0)
 }
 
-func (a *app) init() {
-	a.DB = new(orders.OrderDB)
-	a.DB.Connect("127.0.0.1:6379")
-	a.buildRouter()
-}
-
-func (a *app) buildRouter() {
-	a.Router = mux.NewRouter()
-	a.Router.HandleFunc("/", a.homeHandler).Methods("GET")
-	a.Router.HandleFunc("/orders", a.newOrderHandler).Methods("POST")
-	a.Router.HandleFunc("/orders/{key}", a.orderStatusHandler).Methods("GET")
+func getConfig() *config {
+	c := new(config)
+	c.DBHost = flag.String("dbhost", "127.0.0.1:6379", "connection string for Redis DB")
+	flag.Parse()
+	return c
 }
 
 func runServer(router *mux.Router) {

@@ -42,6 +42,11 @@ func (a *app) newOrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if orderData.Customer == "" || orderData.Pastry == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	log.Printf("New order received. Customer: %s, Pastry: %s", orderData.Customer, orderData.Pastry)
 
 	order := orders.NewOrder(orderData.Customer, orderData.Pastry)
