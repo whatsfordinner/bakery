@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/signal"
 
 	"github.com/streadway/amqp"
 )
@@ -107,7 +106,7 @@ func (q *OrderQueue) PublishOrderMessage(orderMessage *OrderMessage) error {
 }
 
 // ConsumeOrderQueue creates a blocking connection to the order queue
-func (q *OrderQueue) ConsumeOrderQueue(processFunction func(*OrderMessage) error, errorFunc func(error)) error {
+func (q *OrderQueue) ConsumeOrderQueue(signalChannel chan os.Signal, processFunction func(*OrderMessage) error, errorFunc func(error)) error {
 	if q.Connection == nil {
 		return errors.New("connection to RabbitMQ hasn't been established")
 	}
@@ -153,10 +152,7 @@ func (q *OrderQueue) ConsumeOrderQueue(processFunction func(*OrderMessage) error
 		}
 	}()
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
-	<-c
+	<-signalChannel
 
 	return nil
 }
