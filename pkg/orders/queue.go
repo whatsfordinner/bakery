@@ -1,10 +1,10 @@
 package orders
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/streadway/amqp"
 )
@@ -106,7 +106,7 @@ func (q *OrderQueue) PublishOrderMessage(orderMessage *OrderMessage) error {
 }
 
 // ConsumeOrderQueue creates a blocking connection to the order queue
-func (q *OrderQueue) ConsumeOrderQueue(signalChannel chan os.Signal, processFunction func(*OrderMessage) error, errorFunc func(error)) error {
+func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func(*OrderMessage) error, errorFunc func(error)) error {
 	if q.Connection == nil {
 		return errors.New("connection to RabbitMQ hasn't been established")
 	}
@@ -152,7 +152,7 @@ func (q *OrderQueue) ConsumeOrderQueue(signalChannel chan os.Signal, processFunc
 		}
 	}()
 
-	<-signalChannel
+	<-ctx.Done()
 
 	return nil
 }

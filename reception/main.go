@@ -17,8 +17,9 @@ type config struct {
 }
 
 func main() {
+	shutdownTracer := initTracer()
+	defer shutdownTracer()
 	c := getConfig()
-
 	app := new(app)
 	app.init(c)
 	defer app.DB.Disconnect()
@@ -31,6 +32,7 @@ func getConfig() *config {
 	c := new(config)
 	c.DBHost = flag.String("dbhost", "127.0.0.1:6379", "connection string for Redis DB")
 	flag.Parse()
+
 	return c
 }
 
