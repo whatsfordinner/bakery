@@ -95,7 +95,62 @@ func TestDeclareQueue(t *testing.T) {
 }
 
 func TestPublishOrderMessage(t *testing.T) {
+	tests := map[string]struct {
+		connected bool
+		shouldErr bool
+	}{
+		"connected to RabbitMQ":     {true, false},
+		"not connected to RabbitMQ": {false, true},
+	}
 
+	testOrder := NewOrder("homer", "la bombe")
+	testOrderKey := makeKey(testOrder)
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			tearDownRabbitMQ := setUpRabbitMQ()
+			defer tearDownRabbitMQ()
+
+			q := new(OrderQueue)
+
+			if test.connected {
+				q.Connect("localhost:5672", "guest", "guest")
+				err := q.DeclareQueue()
+
+				if err != nil {
+					t.Fatalf("Error declaring queue: %s", err.Error())
+				}
+			}
+
+			err := q.PublishOrderMessage(&OrderMessage{testOrderKey, "la bombe"})
+
+			if err != nil && !test.shouldErr {
+				t.Fatalf("Expected no error but got %s", err.Error())
+			}
+
+			if err == nil && test.shouldErr {
+				t.Fatalf("Expected error but got no error")
+			}
+
+			if err == nil && test.shouldErr {
+				channel, err := q.Connection.Channel()
+
+				if err != nil {
+					t.Fatalf("Error verifying queue exists: %s", err.Error())
+				}
+
+				queue, err := channel.QueueInspect("orders")
+
+				if err != nil {
+					t.Fatalf("Error verifying queue exists: %s", err.Error())
+				}
+
+				if queue.Messages == 0 {
+					t.Fatal("No message was published to the queue")
+				}
+			}
+		})
+	}
 }
 
 func TestConsumeOrderQueue(t *testing.T) {

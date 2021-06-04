@@ -91,6 +91,11 @@ func (q *OrderQueue) PublishOrderMessage(orderMessage *OrderMessage) error {
 	defer channel.Close()
 
 	messageBody, err := json.Marshal(*orderMessage)
+
+	if err != nil {
+		return err
+	}
+
 	err = channel.Publish(
 		"",
 		q.QueueName,
@@ -128,6 +133,10 @@ func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func
 		false,
 		nil,
 	)
+
+	if err != nil {
+		return err
+	}
 
 	go func() {
 		for order := range orders {
