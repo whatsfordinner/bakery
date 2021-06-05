@@ -145,12 +145,12 @@ func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func
 
 			if err != nil {
 				errorFunc(err)
-			}
+			} else {
+				err = processFunction(orderMessage)
 
-			err = processFunction(orderMessage)
-
-			if err != nil {
-				errorFunc(err)
+				if err != nil {
+					errorFunc(err)
+				}
 			}
 
 			err = order.Ack(false)

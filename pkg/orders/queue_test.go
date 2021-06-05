@@ -1,6 +1,8 @@
 package orders
 
 import (
+	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/streadway/amqp"
@@ -154,6 +156,93 @@ func TestPublishOrderMessage(t *testing.T) {
 }
 
 func TestConsumeOrderQueue(t *testing.T) {
+	goodOrderMessage := &OrderMessage{makeKey(NewOrder("homer", "la bombe")), "la bombe"}
+	goodMessage, _ := json.Marshal(goodOrderMessage)
+	badMessage := []byte("foobarbaz")
+	tests := map[string]struct {
+		connected    bool
+		shouldErr    bool
+		goodMessages int
+		badMessages  int
+	}{
+		"no messages":                      {true, false, 0, 0},
+		"one good message":                 {true, false, 1, 0},
+		"many good messages":               {true, false, 5, 0},
+		"one bad message":                  {true, false, 0, 1},
+		"mixture of good and bad messages": {true, false, 2, 2},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			goodFunc := func(order *OrderMessage) error {
+				if *order != *goodOrderMessage {
+					t.Fatalf("Received message does not match good message\nExpected: %+v\nGot: %+v", *goodOrderMessage, *order)
+				}
+				return nil
+			}
+
+			badFunc := func(err error) {}
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			tearDownRabbitMQ := setUpRabbitMQ()
+			defer tearDownRabbitMQ()
+
+			q := new(OrderQueue)
+			q.Connect("localhost:5672", "guest", "guest")
+			err := q.DeclareQueue()
+
+			if err != nil {
+				t.Fatalf("Error declaring queue: %s", err.Error())
+			}
+
+			go q.ConsumeOrderQueue(ctx, goodFunc, badFunc)
+
+			channel, err := q.Connection.Channel()
+
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+
+			defer channel.Close()
+
+			for i := 0; i < test.goodMessages; i++ {
+				err = channel.Publish(
+					"",
+					q.QueueName,
+					false,
+					false,
+					amqp.Publishing{
+						ContentType: "application/json",
+						Body:        goodMessage,
+					},
+				)
+
+				if err != nil {
+					t.Fatalf(err.Error())
+				}
+			}
+
+			for i := 0; i < test.badMessages; i++ {
+				err = channel.Publish(
+					"",
+					q.QueueName,
+					false,
+					false,
+					amqp.Publishing{
+						ContentType: "application/json",
+						Body:        badMessage,
+					},
+				)
+
+				if err != nil {
+					t.Fatalf(err.Error())
+				}
+			}
+		})
+	}
+
 }
 
 func setUpRabbitMQ() func() {
