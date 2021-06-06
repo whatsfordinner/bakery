@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/gorilla/mux"
+	"github.com/whatsfordinner/bakery/pkg/config"
 	"github.com/whatsfordinner/bakery/pkg/orders"
 
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
@@ -19,7 +20,7 @@ type app struct {
 	DB     *orders.OrderDB
 }
 
-func (a *app) init(c *config) {
+func (a *app) init(c *config.Config) {
 	a.DB = new(orders.OrderDB)
 	a.DB.Connect(*c.DBHost)
 	a.buildRouter()

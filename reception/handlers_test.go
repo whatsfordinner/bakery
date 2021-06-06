@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/mediocregopher/radix/v3"
+	"github.com/whatsfordinner/bakery/pkg/config"
 	"github.com/whatsfordinner/bakery/pkg/orders"
 )
 
@@ -46,7 +47,12 @@ func TestOrderStatusHandler(t *testing.T) {
 		"order exists": {
 			http.StatusOK,
 			"order0",
-			&orders.Order{"cookie", "dina", "time1", "pending"},
+			&orders.Order{
+				Pastry:    "cookie",
+				Customer:  "dina",
+				OrderTime: "time1",
+				Status:    "pending",
+			},
 		},
 		"non-existent order": {
 			http.StatusNotFound,
@@ -99,7 +105,12 @@ func TestNewOrderHandler(t *testing.T) {
 		"valid input": {
 			`{"pastry":"pretzel","customer":"biggles"}`,
 			http.StatusAccepted,
-			&orders.Order{"pretzel", "biggles", "testtime", "pending"},
+			&orders.Order{
+				Pastry:    "pretzel",
+				Customer:  "biggles",
+				OrderTime: "testtime",
+				Status:    "pending",
+			},
 		},
 		"invalid input": {
 			`{"not valid":"it really isn't"}`,
@@ -170,16 +181,31 @@ func setUp() (*app, func()) {
 	// Set up the test app
 	testDB := "127.0.0.1:6379"
 	app := new(app)
-	c := &config{
+	c := &config.Config{
 		DBHost: &testDB,
 	}
 	app.init(c)
 
 	// Set up the DB
 	orders := []*orders.Order{
-		{"cookie", "dina", "time1", "pending"},
-		{"brownie", "claude", "time2", "complete"},
-		{"panini", "omar", "time3", "pending"},
+		{
+			Pastry:    "cookie",
+			Customer:  "dina",
+			OrderTime: "time1",
+			Status:    "pending",
+		},
+		{
+			Pastry:    "brownie",
+			Customer:  "claude",
+			OrderTime: "time2",
+			Status:    "complete",
+		},
+		{
+			Pastry:    "panini",
+			Customer:  "omar",
+			OrderTime: "time3",
+			Status:    "pending",
+		},
 	}
 	db, err := radix.NewPool("tcp", testDB, 1)
 
@@ -207,6 +233,11 @@ func setUp() (*app, func()) {
 		defer db.Close()
 		keys := []string{}
 		err = db.Do(radix.Cmd(&keys, "KEYS", "*"))
+
+		if err != nil {
+			panic(err)
+		}
+
 		for _, key := range keys {
 			err = db.Do(radix.Cmd(nil, "DEL", key))
 

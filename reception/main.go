@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -10,30 +9,19 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/whatsfordinner/bakery/pkg/config"
 )
-
-type config struct {
-	DBHost *string
-}
 
 func main() {
 	shutdownTracer := initTracer()
 	defer shutdownTracer()
-	c := getConfig()
+	c := config.GetConfig(context.Background())
 	app := new(app)
 	app.init(c)
 	defer app.DB.Disconnect()
 	runServer(app.Router)
 
 	os.Exit(0)
-}
-
-func getConfig() *config {
-	c := new(config)
-	c.DBHost = flag.String("dbhost", "127.0.0.1:6379", "connection string for Redis DB")
-	flag.Parse()
-
-	return c
 }
 
 func runServer(router *mux.Router) {
