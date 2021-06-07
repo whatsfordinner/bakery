@@ -18,11 +18,21 @@ import (
 type app struct {
 	Router *mux.Router
 	DB     *orders.OrderDB
+	Queue  *orders.OrderQueue
 }
 
 func (a *app) init(c *config.Config) {
 	a.DB = new(orders.OrderDB)
-	a.DB.Connect(*c.DBHost)
+	err := a.DB.Connect(*c.DBHost)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	a.Queue = new(orders.OrderQueue)
+	err = a.Queue.Connect(*c.RabbitHost, *c.RabbitUsername, *c.RabbitUsername)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	a.buildRouter()
 }
 

@@ -30,8 +30,16 @@ github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5Cc
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210606114944-15426c2bf092 h1:r+hupTceGMG7nPDklrDCERVTtaqOPZF/4XjtdUT053M=
 github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210606114944-15426c2bf092/go.mod h1:AhnVJH2oDa498u+CF37f5P9U6aHEvL1YXSGQPEW1ROc=
+github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210606115631-e8e1628bab0f h1:1Q/1p0BQzByS3Y3aCcE1niibWoEEBHRd47Kot5QSIDQ=
+github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210606115631-e8e1628bab0f/go.mod h1:AhnVJH2oDa498u+CF37f5P9U6aHEvL1YXSGQPEW1ROc=
+github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210607105251-f64f143b3ff7 h1:6TSVBaGvjdjHnWRqXG5nP98rgWzOqQhp7MuUtcy74UQ=
+github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210607105251-f64f143b3ff7/go.mod h1:AhnVJH2oDa498u+CF37f5P9U6aHEvL1YXSGQPEW1ROc=
 github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210605113819-219fb02ae5ad h1:2VetMMXe43YgkDJgBsPKkS29HcUegJUqQmEB2BOUo9A=
 github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210605113819-219fb02ae5ad/go.mod h1:P9gRdfSEOwkTbWEbLBmx0COymKbxOW0WWSj2S6zrlbQ=
+github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210606115631-e8e1628bab0f h1:7XK/KkELxR95qicUIW/3hemB7WqkOffEhRu6QAd0BZM=
+github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210606115631-e8e1628bab0f/go.mod h1:P9gRdfSEOwkTbWEbLBmx0COymKbxOW0WWSj2S6zrlbQ=
+github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210607110352-1ae4bc5a049c h1:Oh3xLXkxbvTyguXs7mOWwL7Dcoqr/ChmTJ98ftSTGuc=
+github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210607110352-1ae4bc5a049c/go.mod h1:P9gRdfSEOwkTbWEbLBmx0COymKbxOW0WWSj2S6zrlbQ=
 go.opentelemetry.io/contrib v0.20.0 h1:ubFQUn0VCZ0gPwIoJfBJVpeBlyRMxu8Mm/huKWYd9p0=
 go.opentelemetry.io/contrib v0.20.0/go.mod h1:G/EtFaa6qaN7+LxqfIAT3GiZa7Wv5DTBUzl5H4LY0Kc=
 go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.20.0 h1:9Dd3wngO66ccAbfZtp+1f7Y/j4X16BP5PDQu99Cd8fE=
