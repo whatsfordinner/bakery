@@ -31,6 +31,13 @@ func (q *OrderQueue) Connect(host string, username string, password string) erro
 	}
 
 	q.Connection = connection
+
+	err = q.DeclareQueue()
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
