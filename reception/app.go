@@ -23,13 +23,13 @@ type app struct {
 
 func (a *app) init(c *config.Config) {
 	a.DB = new(orders.OrderDB)
-	err := a.DB.Connect(*c.DBHost)
+	err := a.DB.Connect(c.DBHost)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
 	a.Queue = new(orders.OrderQueue)
-	err = a.Queue.Connect(*c.RabbitHost, *c.RabbitUsername, *c.RabbitUsername)
+	err = a.Queue.Connect(c.RabbitHost, c.RabbitUsername, c.RabbitUsername)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

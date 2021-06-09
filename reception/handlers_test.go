@@ -180,9 +180,15 @@ func TestNewOrderHandler(t *testing.T) {
 func setUp() (*app, func()) {
 	// Set up the test app
 	testDB := "127.0.0.1:6379"
+	testRabbit := "127.0.0.1:5672"
+	testRabbitUser := "guest"
+	testRabbitPassword := "guest"
 	app := new(app)
 	c := &config.Config{
-		DBHost: &testDB,
+		DBHost:         testDB,
+		RabbitHost:     testRabbit,
+		RabbitUsername: testRabbitUser,
+		RabbitPassword: testRabbitPassword,
 	}
 	app.init(c)
 
