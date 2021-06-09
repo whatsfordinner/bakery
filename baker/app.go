@@ -33,12 +33,18 @@ func (a *app) init(c *config.Config) {
 
 func (a *app) run() {
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
-	go a.Queue.ConsumeOrderQueue(ctx, bakeOrder, rejectOrder)
+	go a.Queue.ConsumeOrderQueue(ctx, a.bakeOrder, a.rejectOrder)
 	<-c
+	cancel()
 	err := a.Queue.Disconnect()
+
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	err = a.DB.Disconnect()
 
 	if err != nil {
 		log.Fatal(err.Error())
