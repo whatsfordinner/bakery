@@ -1,0 +1,131 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: connection-details
+data:
+  DB_HOST: redis:6379
+  RABBIT_HOST: rabbitmq:5672
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reception
+  labels:
+    app: reception
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reception
+  template:
+    metadata:
+      labels:
+        app: reception
+    spec:
+      containers:
+      - name: reception
+        image: bakery/reception
+        envFrom:
+        - configMapRef:
+            name: connection-details
+        ports:
+        - containerPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: baker
+  labels:
+    app: baker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: baker
+  template:
+    metadata:
+      labels:
+        app: baker
+    spec:
+      containers:
+      - name: baker
+        image: bakery/baker
+        envFrom:
+        - configMapRef:
+            name: connection-details
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  labels:
+    app: rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:3.8-management
+        ports:
+        - containerPort: 5672
+        - containerPort: 15672
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  labels:
+    app: rabbitmq
+spec:
+  ports:
+  - port: 5672
+    protocol: TCP
+    name: amqp
+  - port: 15672
+    protocol: TCP
+    name: management
+  selector:
+    app: rabbitmq
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:latest
+        ports:
+        - containerPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  ports:
+  - port: 6379
+    protocol: TCP
+  selector:
+    app: redis
