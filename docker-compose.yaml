@@ -1,0 +1,33 @@
+version: "3.9"
+services:
+    reception:
+        build:
+            context: ./reception
+            dockerfile: ../Dockerfile
+        depends_on:
+            - redis
+            - rabbitmq
+        environment:
+            DB_HOST: redis:6379
+            RABBIT_HOST: rabbitmq:5672
+        ports:
+            - 8000:8000
+    baker:
+        build:
+            context: ./baker
+            dockerfile: ../Dockerfile
+        depends_on:
+            - redis
+            - rabbitmq
+        environment:
+            DB_HOST: redis:6379
+            RABBIT_HOST: rabbitmq:5672
+    rabbitmq:
+        image: rabbitmq:3.8-management
+        ports: 
+            - 15672:15672
+    redis:
+        image: redis:latest
+        ports:
+            - 6379:6379
+    
