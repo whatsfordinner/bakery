@@ -11,6 +11,7 @@ type Config struct {
 	RabbitHost     string
 	RabbitUsername string
 	RabbitPassword string
+	JaegerEndpoint string
 }
 
 // GetConfig reads in config values from their appropriate command line flags
@@ -42,6 +43,11 @@ func GetConfig(ctx context.Context) *Config {
 	val, exists = os.LookupEnv("RABBIT_PASSWORD")
 	if exists {
 		c.RabbitPassword = val
+	}
+
+	val, exists = os.LookupEnv("JAEGER_ENDPOINT")
+	if exists {
+		c.JaegerEndpoint = val
 	}
 
 	return c

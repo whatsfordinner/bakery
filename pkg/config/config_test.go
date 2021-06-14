@@ -12,10 +12,11 @@ func TestGetConfig(t *testing.T) {
 		rabbitHostOverride     string
 		rabbitUsernameOverride string
 		rabbitPasswordOverride string
+		jaegerEndpointOverride string
 	}{
-		"no override":    {"", "", "", ""},
-		"some overrides": {"foo", "", "", "qux"},
-		"all overrides":  {"foo", "bar", "baz", "qux"},
+		"no override":    {"", "", "", "", ""},
+		"some overrides": {"foo", "", "", "qux", "xyzzy"},
+		"all overrides":  {"foo", "bar", "baz", "qux", "xyzzy"},
 	}
 
 	for name, test := range tests {
@@ -42,6 +43,12 @@ func TestGetConfig(t *testing.T) {
 				os.Setenv("RABBIT_PASSWORD", test.rabbitPasswordOverride)
 			} else {
 				os.Unsetenv("RABBIT_PASSWORD")
+			}
+
+			if test.jaegerEndpointOverride != "" {
+				os.Setenv("JAEGER_ENDPOINT", test.jaegerEndpointOverride)
+			} else {
+				os.Unsetenv("JAEGER_ENDPOINT")
 			}
 
 			c := GetConfig(context.Background())
@@ -78,6 +85,13 @@ func TestGetConfig(t *testing.T) {
 				t.Fatalf("Default failed.\nExpected: %s\nGot: %s", test.rabbitPasswordOverride, c.RabbitPassword)
 			}
 
+			if test.jaegerEndpointOverride != "" && c.JaegerEndpoint != test.jaegerEndpointOverride {
+				t.Fatalf("Override failed.\nExpected: %s\nGot: %s", test.jaegerEndpointOverride, c.JaegerEndpoint)
+			}
+
+			if test.jaegerEndpointOverride == "" && c.JaegerEndpoint != "" {
+				t.Fatalf("Default failed.\nExpected: %s\nGot: %s", test.jaegerEndpointOverride, c.JaegerEndpoint)
+			}
 		})
 	}
 }
