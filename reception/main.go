@@ -10,12 +10,17 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/whatsfordinner/bakery/pkg/config"
+	"github.com/whatsfordinner/bakery/pkg/trace"
 )
 
 func main() {
-	shutdownTracer := initTracer()
+	ctx := context.Background()
+	c := config.GetConfig(ctx)
+	shutdownTracer, err := trace.InitTracer(ctx, c)
+	if err != nil {
+		log.Fatalf("Error initialising tracer: %v", err)
+	}
 	defer shutdownTracer()
-	c := config.GetConfig(context.Background())
 	app := new(app)
 	app.init(c)
 	defer app.DB.Disconnect()

@@ -6,12 +6,9 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mediocregopher/radix/v3 v3.7.0
-	github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210609122824-0c5330d5604c
+	github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210614113052-706ae95fa86c
 	github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210607110352-1ae4bc5a049c
+	github.com/whatsfordinner/bakery/pkg/trace v0.0.0-20210614122213-e866dc1b29b8
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.20.0
-	go.opentelemetry.io/otel v0.20.0
-	go.opentelemetry.io/otel/exporters/stdout v0.20.0
-	go.opentelemetry.io/otel/sdk v0.20.0
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )

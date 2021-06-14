@@ -6,6 +6,7 @@ metadata:
 data:
   DB_HOST: redis:6379
   RABBIT_HOST: rabbitmq:5672
+  JAEGER_ENDPOINT: jaeger:55680
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -192,3 +193,5 @@ spec:
   - port: 16686
     protocol: TCP
     name: ui
+  selector:
+    app: jaeger
