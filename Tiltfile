@@ -1,4 +1,7 @@
-load('ext://restart_process', 'docker_build_with_restart')
+load(
+  'ext://restart_process',
+  'docker_build_with_restart'
+)
 
 local_resource(
   'reception-compile',
@@ -35,3 +38,19 @@ docker_build_with_restart(
 )
 
 k8s_yaml('tilt/deploy.yaml')
+
+k8s_resource(
+  workload='reception',
+  port_forwards=8000,
+  resource_deps=['redis','rabbitmq']
+)
+
+k8s_resource(
+  workload='baker',
+  resource_deps=['redis','rabbitmq']
+)
+
+k8s_resource(
+  workload='jaeger',
+  port_forwards=16686
+)

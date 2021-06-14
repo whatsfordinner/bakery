@@ -77,6 +77,15 @@ spec:
         ports:
         - containerPort: 5672
         - containerPort: 15672
+        readinessProbe:
+          tcpSocket:
+            port: 5672
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      - name: exporter
+        image: kbudde/rabbitmq-exporter:latest
+        ports:
+        - containerPort: 9419
 ---
 apiVersion: v1
 kind: Service
@@ -92,6 +101,9 @@ spec:
   - port: 15672
     protocol: TCP
     name: management
+  - port: 9419
+    protocol: TCP
+    name: metrics
   selector:
     app: rabbitmq
 ---
@@ -116,6 +128,15 @@ spec:
         image: redis:latest
         ports:
         - containerPort: 6379
+        readinessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      - name: exporter
+        image: oliver006/redis_exporter:latest
+        ports:
+        - containerPort: 9121
 ---
 apiVersion: v1
 kind: Service
@@ -127,5 +148,47 @@ spec:
   ports:
   - port: 6379
     protocol: TCP
+    name: redis
+  - port: 9121
+    protocol: TCP
+    name: metrics
   selector:
     app: redis
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  labels:
+    app: jaeger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+  template:
+    metadata:
+      labels:
+        app: jaeger
+    spec:
+      containers:
+      - name: jaeger
+        image: jaegertracing/opentelemetry-all-in-one:latest
+        ports:
+        - containerPort: 55680
+        - containerPort: 16686
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger
+  labels:
+    app: jaeger
+spec:
+  ports:
+  - port: 55680
+    protocol: TCP
+    name: telemetry
+  - port: 16686
+    protocol: TCP
+    name: ui
