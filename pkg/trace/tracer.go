@@ -9,6 +9,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
 	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"google.golang.org/grpc"
 )
 
 // InitTracer initialises a new OTLP trace provider and adds trace providers
@@ -21,6 +22,7 @@ func InitTracer(ctx context.Context, c *config.Config) (func(), error) {
 			ctx,
 			otlpgrpc.NewDriver(
 				otlpgrpc.WithEndpoint(c.JaegerEndpoint),
+				otlpgrpc.WithDialOption(grpc.WithInsecure()),
 			),
 		)
 
