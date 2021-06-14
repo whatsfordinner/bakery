@@ -4,8 +4,10 @@ import (
 	"context"
 
 	"github.com/whatsfordinner/bakery/pkg/config"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpgrpc"
+	"go.opentelemetry.io/otel/propagation"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -28,6 +30,14 @@ func InitTracer(ctx context.Context, c *config.Config) (func(), error) {
 
 		tp.RegisterSpanProcessor(sdktrace.NewBatchSpanProcessor(jaegerExporter))
 	}
+
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(
+		propagation.NewCompositeTextMapPropagator(
+			propagation.TraceContext{},
+			propagation.Baggage{},
+		),
+	)
 
 	return func() {
 		_ = tp.Shutdown(ctx)
