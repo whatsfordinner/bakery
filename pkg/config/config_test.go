@@ -8,19 +8,26 @@ import (
 
 func TestGetConfig(t *testing.T) {
 	tests := map[string]struct {
+		serviceNameOverride    string
 		dbHostOverride         string
 		rabbitHostOverride     string
 		rabbitUsernameOverride string
 		rabbitPasswordOverride string
 		jaegerEndpointOverride string
 	}{
-		"no override":    {"", "", "", "", ""},
-		"some overrides": {"foo", "", "", "qux", "xyzzy"},
-		"all overrides":  {"foo", "bar", "baz", "qux", "xyzzy"},
+		"no override":    {"", "", "", "", "", ""},
+		"some overrides": {"", "foo", "", "", "qux", "xyzzy"},
+		"all overrides":  {"plugh", "foo", "bar", "baz", "qux", "xyzzy"},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
+			if test.serviceNameOverride != "" {
+				os.Setenv("SERVICE_NAME", test.serviceNameOverride)
+			} else {
+				os.Unsetenv("SERVICE_NAME")
+			}
+
 			if test.dbHostOverride != "" {
 				os.Setenv("DB_HOST", test.dbHostOverride)
 			} else {
@@ -52,6 +59,14 @@ func TestGetConfig(t *testing.T) {
 			}
 
 			c := GetConfig(context.Background())
+
+			if test.serviceNameOverride != "" && c.ServiceName != test.serviceNameOverride {
+				t.Fatalf("Override failed.\nExpected: %s\nGot: %s", test.serviceNameOverride, c.ServiceName)
+			}
+
+			if test.serviceNameOverride == "" && c.ServiceName != "bakery" {
+				t.Fatalf("Default failed.\nExpected: %s\nGot: %s", "bakery", c.ServiceName)
+			}
 
 			if test.dbHostOverride != "" && c.DBHost != test.dbHostOverride {
 				t.Fatalf("Override failed.\nExpected: %s\nGot: %s", test.dbHostOverride, c.DBHost)
