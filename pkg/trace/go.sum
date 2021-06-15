@@ -50,6 +50,8 @@ github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210614043447-bcab109610e7 h
 github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210614043447-bcab109610e7/go.mod h1:AhnVJH2oDa498u+CF37f5P9U6aHEvL1YXSGQPEW1ROc=
 github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210614113052-706ae95fa86c h1:C0f4BEZwfQ+Bhl0yy6oJ26hUCsemDVsGlv4D5pb6I84=
 github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210614113052-706ae95fa86c/go.mod h1:AhnVJH2oDa498u+CF37f5P9U6aHEvL1YXSGQPEW1ROc=
+github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210615112756-96e41deeb24e h1:AhTxsGmXamrgQiY3NErK3kYqFE+b+q7k5mGmKczQVFQ=
+github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210615112756-96e41deeb24e/go.mod h1:AhnVJH2oDa498u+CF37f5P9U6aHEvL1YXSGQPEW1ROc=
 go.opentelemetry.io/otel v0.20.0 h1:eaP0Fqu7SXHwvjiqDq83zImeehOHX8doTvU9AwXON8g=
 go.opentelemetry.io/otel v0.20.0/go.mod h1:Y3ugLH2oa81t5QO+Lty+zXf8zC9L26ax4Nzoxm/dooo=
 go.opentelemetry.io/otel/exporters/otlp v0.20.0 h1:PTNgq9MRmQqqJY0REVbZFvwkYOA85vbdQU/nVfxDyqg=
