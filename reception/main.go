@@ -16,6 +16,7 @@ import (
 func main() {
 	ctx := context.Background()
 	c := config.GetConfig(ctx)
+	c.ServiceName = "reception"
 	shutdownTracer, err := trace.InitTracer(ctx, c)
 	if err != nil {
 		log.Fatalf("Error initialising tracer: %v", err)

@@ -50,7 +50,7 @@ func (a *app) newOrderHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("New order received. Customer: %s, Pastry: %s", orderData.Customer, orderData.Pastry)
 
 	order := orders.NewOrder(orderData.Customer, orderData.Pastry)
-	key, err := a.DB.CreateOrder(order)
+	key, err := a.DB.CreateOrder(r.Context(), order)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -79,7 +79,7 @@ func (a *app) newOrderHandler(w http.ResponseWriter, r *http.Request) {
 func (a *app) orderStatusHandler(w http.ResponseWriter, r *http.Request) {
 	orderKey := mux.Vars(r)["key"]
 
-	order, err := a.DB.ReadOrder(orderKey)
+	order, err := a.DB.ReadOrder(r.Context(), orderKey)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
