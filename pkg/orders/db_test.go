@@ -1,11 +1,13 @@
 package orders
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/mediocregopher/radix/v3"
+	"go.opentelemetry.io/otel"
 )
 
 func TestConnect(t *testing.T) {
@@ -85,6 +87,7 @@ func TestCreateOrder(t *testing.T) {
 	}
 
 	db := new(OrderDB)
+	db.tracer = otel.Tracer("testing")
 	err := db.Connect("127.0.0.1:6379")
 
 	if err != nil {
@@ -98,7 +101,7 @@ func TestCreateOrder(t *testing.T) {
 			tearDown := setUp()
 			defer tearDown()
 
-			key, err := db.CreateOrder(test.input)
+			key, err := db.CreateOrder(context.Background(), test.input)
 
 			if err != nil && !test.shouldErr {
 				t.Fatalf("Expected no error but got %s", err.Error())
@@ -109,7 +112,7 @@ func TestCreateOrder(t *testing.T) {
 			}
 
 			if err == nil && !test.shouldErr {
-				result, err := db.ReadOrder(key)
+				result, err := db.ReadOrder(context.Background(), key)
 
 				if err != nil {
 					t.Fatalf("Error while validting created order: %s", err.Error())
@@ -142,6 +145,7 @@ func TestReadOrder(t *testing.T) {
 	}
 
 	db := new(OrderDB)
+	db.tracer = otel.Tracer("testing")
 	err := db.Connect("127.0.0.1:6379")
 
 	if err != nil {
@@ -155,7 +159,7 @@ func TestReadOrder(t *testing.T) {
 			tearDown := setUp()
 			defer tearDown()
 
-			result, err := db.ReadOrder(test.orderKey)
+			result, err := db.ReadOrder(context.Background(), test.orderKey)
 
 			if err != nil && !test.shouldErr {
 				t.Fatalf("Expected no error but got %s", err.Error())
@@ -191,6 +195,7 @@ func TestUpdateOrder(t *testing.T) {
 	}
 
 	db := new(OrderDB)
+	db.tracer = otel.Tracer("testing")
 	err := db.Connect("127.0.0.1:6379")
 
 	if err != nil {
@@ -204,7 +209,7 @@ func TestUpdateOrder(t *testing.T) {
 			tearDown := setUp()
 			defer tearDown()
 
-			err = db.UpdateOrder(test.orderKey, "testing")
+			err = db.UpdateOrder(context.Background(), test.orderKey, "testing")
 
 			if err != nil && !test.shouldErr {
 				t.Fatalf("Expected no error but got %s", err.Error())
@@ -215,7 +220,7 @@ func TestUpdateOrder(t *testing.T) {
 			}
 
 			if err == nil && !test.shouldErr {
-				result, err := db.ReadOrder(test.orderKey)
+				result, err := db.ReadOrder(context.Background(), test.orderKey)
 
 				if err != nil {
 					t.Fatalf("Error while validating updated order: %s", err.Error())
