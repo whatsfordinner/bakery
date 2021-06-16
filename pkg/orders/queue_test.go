@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/streadway/amqp"
+	"github.com/whatsfordinner/bakery/pkg/config"
+	"go.opentelemetry.io/otel"
 )
 
 func TestRabbitMQConnect(t *testing.T) {
@@ -22,8 +24,11 @@ func TestRabbitMQConnect(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			q := new(OrderQueue)
-			err := q.Connect(test.host, test.username, test.password)
+			_, err := NewOrderQueue((&config.Config{
+				RabbitHost:     test.host,
+				RabbitUsername: test.username,
+				RabbitPassword: test.password,
+			}))
 
 			if err != nil && !test.shouldErr {
 				t.Fatalf("Expected no error but got %s", err.Error())
@@ -55,6 +60,7 @@ func TestDeclareQueue(t *testing.T) {
 			defer tearDownRabbitMQ()
 
 			q := new(OrderQueue)
+			q.tracer = otel.Tracer("test")
 
 			if test.connected {
 				q.Connect("localhost:5672", "guest", "guest")
@@ -114,6 +120,7 @@ func TestPublishOrderMessage(t *testing.T) {
 			defer tearDownRabbitMQ()
 
 			q := new(OrderQueue)
+			q.tracer = otel.Tracer("test")
 
 			if test.connected {
 				q.Connect("localhost:5672", "guest", "guest")
@@ -124,7 +131,7 @@ func TestPublishOrderMessage(t *testing.T) {
 				}
 			}
 
-			err := q.PublishOrderMessage(&OrderMessage{testOrderKey, "la bombe"})
+			err := q.PublishOrderMessage(context.Background(), &OrderMessage{testOrderKey, "la bombe"})
 
 			if err != nil && !test.shouldErr {
 				t.Fatalf("Expected no error but got %s", err.Error())
@@ -174,14 +181,14 @@ func TestConsumeOrderQueue(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			goodFunc := func(order *OrderMessage) error {
+			goodFunc := func(ctx context.Context, order *OrderMessage) error {
 				if *order != *goodOrderMessage {
 					t.Fatalf("Received message does not match good message\nExpected: %+v\nGot: %+v", *goodOrderMessage, *order)
 				}
 				return nil
 			}
 
-			badFunc := func(err error) {}
+			badFunc := func(ctx context.Context, err error) {}
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -190,7 +197,9 @@ func TestConsumeOrderQueue(t *testing.T) {
 			defer tearDownRabbitMQ()
 
 			q := new(OrderQueue)
+			q.tracer = otel.Tracer("test")
 			q.Connect("localhost:5672", "guest", "guest")
+
 			err := q.DeclareQueue()
 
 			if err != nil {

@@ -7,18 +7,33 @@ import (
 	"fmt"
 
 	"github.com/streadway/amqp"
+	"github.com/whatsfordinner/bakery/pkg/config"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
-
-// OrderQueue manages the connection to RabbitMQ
-type OrderQueue struct {
-	Connection *amqp.Connection
-	QueueName  string
-}
 
 // OrderMessage contains the body of the queue message
 type OrderMessage struct {
 	OrderKey string `json:"orderKey"`
 	Pastry   string `json:"pastry"`
+}
+
+// OrderQueue manages the connection to RabbitMQ
+type OrderQueue struct {
+	Connection *amqp.Connection
+	QueueName  string
+	tracer     trace.Tracer
+}
+
+func NewOrderQueue(c *config.Config) (*OrderQueue, error) {
+	orderQueue := new(OrderQueue)
+
+	orderQueue.tracer = otel.Tracer("rabbitmq")
+	if err := orderQueue.Connect(c.RabbitHost, c.RabbitUsername, c.RabbitPassword); err != nil {
+		return nil, err
+	}
+
+	return orderQueue, nil
 }
 
 // Connect will connect to the RabbitMQ instance
@@ -84,7 +99,10 @@ func (q *OrderQueue) DeclareQueue() error {
 }
 
 // PublishOrderMessage publishes an OrderMessage to the queue
-func (q *OrderQueue) PublishOrderMessage(orderMessage *OrderMessage) error {
+func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderMessage *OrderMessage) error {
+	_, span := q.tracer.Start(ctx, "publish-order")
+	defer span.End()
+
 	if q.Connection == nil {
 		return errors.New("connection to RabbitMQ hasn't been established")
 	}
@@ -118,7 +136,7 @@ func (q *OrderQueue) PublishOrderMessage(orderMessage *OrderMessage) error {
 }
 
 // ConsumeOrderQueue creates a blocking connection to the order queue
-func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func(*OrderMessage) error, errorFunc func(error)) error {
+func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func(context.Context, *OrderMessage) error, errorFunc func(context.Context, error)) error {
 	if q.Connection == nil {
 		return errors.New("connection to RabbitMQ hasn't been established")
 	}
@@ -147,24 +165,27 @@ func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func
 
 	go func() {
 		for order := range orders {
+			ctx, span := q.tracer.Start(ctx, "receive-order")
+
 			orderMessage := new(OrderMessage)
 			err := json.Unmarshal(order.Body, orderMessage)
 
 			if err != nil {
-				errorFunc(err)
+				errorFunc(ctx, err)
 			} else {
-				err = processFunction(orderMessage)
+				err = processFunction(ctx, orderMessage)
 
 				if err != nil {
-					errorFunc(err)
+					errorFunc(ctx, err)
 				}
 			}
 
 			err = order.Ack(false)
 
 			if err != nil {
-				errorFunc(err)
+				errorFunc(ctx, err)
 			}
+			span.End()
 		}
 	}()
 
