@@ -8,6 +8,7 @@ import (
 	"github.com/mediocregopher/radix/v3"
 	"github.com/whatsfordinner/bakery/pkg/config"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -54,13 +55,20 @@ func (db *OrderDB) CreateOrder(ctx context.Context, order *Order) (string, error
 	_, span := db.tracer.Start(ctx, "create-order")
 	defer span.End()
 
+	span.SetAttributes(
+		attribute.String("redis-operation", "HSET"),
+		attribute.Bool("success", false),
+	)
+
 	key := makeKey(order)
+	span.SetAttributes(attribute.String("order-key", key))
 	err := db.Pool.Do(radix.FlatCmd(nil, "HSET", key, *order))
 
 	if err != nil {
 		return "", err
 	}
 
+	span.SetAttributes(attribute.Bool("success", true))
 	return key, nil
 }
 
@@ -68,6 +76,12 @@ func (db *OrderDB) CreateOrder(ctx context.Context, order *Order) (string, error
 func (db *OrderDB) ReadOrder(ctx context.Context, orderKey string) (*Order, error) {
 	_, span := db.tracer.Start(ctx, "read-order")
 	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("redis-operation", "HGETALL"),
+		attribute.String("order-key", orderKey),
+		attribute.Bool("found-order", false),
+	)
 
 	order := new(Order)
 	err := db.Pool.Do(radix.Cmd(order, "HGETALL", orderKey))
@@ -80,6 +94,7 @@ func (db *OrderDB) ReadOrder(ctx context.Context, orderKey string) (*Order, erro
 		return nil, nil
 	}
 
+	span.SetAttributes(attribute.Bool("found-order", true))
 	return order, nil
 }
 
@@ -87,6 +102,13 @@ func (db *OrderDB) ReadOrder(ctx context.Context, orderKey string) (*Order, erro
 func (db *OrderDB) UpdateOrder(ctx context.Context, orderKey string, newStatus string) error {
 	ctx, span := db.tracer.Start(ctx, "update-order")
 	defer span.End()
+
+	span.SetAttributes(
+		attribute.String("redis-operation", "HSET"),
+		attribute.String("order-key", orderKey),
+		attribute.String("order-status", newStatus),
+		attribute.Bool("success", false),
+	)
 
 	// Check that the order exists first
 	order, err := db.ReadOrder(ctx, orderKey)
@@ -99,7 +121,12 @@ func (db *OrderDB) UpdateOrder(ctx context.Context, orderKey string, newStatus s
 		return fmt.Errorf("Order with key %s does not exist", orderKey)
 	}
 
-	return db.Pool.Do(radix.Cmd(nil, "HSET", orderKey, "Status", newStatus))
+	if err = db.Pool.Do(radix.Cmd(nil, "HSET", orderKey, "Status", newStatus)); err != nil {
+		return err
+	}
+
+	span.SetAttributes(attribute.Bool("success", true))
+	return nil
 }
 
 func makeKey(order *Order) string {

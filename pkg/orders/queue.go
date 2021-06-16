@@ -9,6 +9,7 @@ import (
 	"github.com/streadway/amqp"
 	"github.com/whatsfordinner/bakery/pkg/config"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -103,6 +104,12 @@ func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderMessage *Orde
 	_, span := q.tracer.Start(ctx, "publish-order")
 	defer span.End()
 
+	span.SetAttributes(
+		attribute.String("order-key", orderMessage.OrderKey),
+		attribute.String("pastry", orderMessage.Pastry),
+		attribute.Bool("success", false),
+	)
+
 	if q.Connection == nil {
 		return errors.New("connection to RabbitMQ hasn't been established")
 	}
@@ -121,7 +128,7 @@ func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderMessage *Orde
 		return err
 	}
 
-	err = channel.Publish(
+	if err = channel.Publish(
 		"",
 		q.QueueName,
 		false,
@@ -130,9 +137,12 @@ func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderMessage *Orde
 			ContentType: "application/json",
 			Body:        messageBody,
 		},
-	)
+	); err != nil {
+		return err
+	}
 
-	return err
+	span.SetAttributes(attribute.Bool("success", true))
+	return nil
 }
 
 // ConsumeOrderQueue creates a blocking connection to the order queue
@@ -166,6 +176,7 @@ func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func
 	go func() {
 		for order := range orders {
 			ctx, span := q.tracer.Start(ctx, "receive-order")
+			span.SetAttributes(attribute.Bool("success", false))
 
 			orderMessage := new(OrderMessage)
 			err := json.Unmarshal(order.Body, orderMessage)
@@ -173,6 +184,10 @@ func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func
 			if err != nil {
 				errorFunc(ctx, err)
 			} else {
+				span.SetAttributes(
+					attribute.String("order-key", orderMessage.OrderKey),
+					attribute.String("pastry", orderMessage.Pastry),
+				)
 				err = processFunction(ctx, orderMessage)
 
 				if err != nil {
@@ -185,6 +200,7 @@ func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func
 			if err != nil {
 				errorFunc(ctx, err)
 			}
+			span.SetAttributes(attribute.Bool("success", true))
 			span.End()
 		}
 	}()
