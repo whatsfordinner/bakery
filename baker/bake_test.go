@@ -44,12 +44,12 @@ func TestBakeOrder(t *testing.T) {
 			a, teardown := setUpApp()
 			defer teardown()
 
-			key, err := a.DB.CreateOrder(orders.NewOrder("Homer", test.pastryName))
+			key, err := a.DB.CreateOrder(context.Background(), orders.NewOrder("Homer", test.pastryName))
 			if err != nil {
 				t.Fatalf(err.Error())
 			}
 
-			err = a.bakeOrder(&orders.OrderMessage{OrderKey: key, Pastry: test.pastryName})
+			err = a.bakeOrder(context.Background(), &orders.OrderMessage{OrderKey: key, Pastry: test.pastryName})
 
 			if err != nil && !test.shouldErr {
 				t.Fatalf("Expected no error but got %s", err.Error())
@@ -60,7 +60,7 @@ func TestBakeOrder(t *testing.T) {
 			}
 
 			if err == nil && !test.shouldErr {
-				order, err := a.DB.ReadOrder(key)
+				order, err := a.DB.ReadOrder(context.Background(), key)
 				if err != nil {
 					t.Fatal(err.Error())
 				}

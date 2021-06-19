@@ -3,8 +3,7 @@ module github.com/whatsfordinner/bakery/baker
 go 1.14
 
 require (
-	github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210609122824-0c5330d5604c
-	github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210607110352-1ae4bc5a049c
-	golang.org/x/tools v0.1.0
-	honnef.co/go/tools v0.2.0
+	github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210616105620-4638e7736c8f
+	github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210616124049-f531dac6597d
+	github.com/whatsfordinner/bakery/pkg/trace v0.0.0-20210615135850-a20c93ba5d2f
 )

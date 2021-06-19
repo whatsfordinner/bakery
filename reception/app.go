@@ -22,11 +22,11 @@ func (a *app) init(c *config.Config) {
 		log.Fatal(err.Error())
 	}
 	a.DB = db
-	a.Queue = new(orders.OrderQueue)
-	err = a.Queue.Connect(c.RabbitHost, c.RabbitUsername, c.RabbitUsername)
+	queue, err := orders.NewOrderQueue(c)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	a.Queue = queue
 	a.buildRouter()
 }
 

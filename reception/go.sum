@@ -78,6 +78,10 @@ github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210607110352-1ae4bc5a049c h
 github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210607110352-1ae4bc5a049c/go.mod h1:P9gRdfSEOwkTbWEbLBmx0COymKbxOW0WWSj2S6zrlbQ=
 github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210615134525-eb257147d41e h1:Rz3ZCgGU2YkL6GKJkgqxRNpj03/YSkF6wnupIfWggU0=
 github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210615134525-eb257147d41e/go.mod h1:K7QK6WsHaVPTMqiV17w0MvzB9OhapF3TwSQPAS/aQDA=
+github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210616105620-4638e7736c8f h1:QJ5BfV7G8lM2ugbOkPdOl09atQI3JfjH87a1BETlNPc=
+github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210616105620-4638e7736c8f/go.mod h1:4uS+X/QE7SJbAq4LEB/xPnIm1im4YQqflOfA0Kz11TE=
+github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210616124049-f531dac6597d h1:89DalTnR/7nYARwOs5XVr7iakXHuIH65ADI4G3f/c7w=
+github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210616124049-f531dac6597d/go.mod h1:4uS+X/QE7SJbAq4LEB/xPnIm1im4YQqflOfA0Kz11TE=
 github.com/whatsfordinner/bakery/pkg/trace v0.0.0-20210614120009-a37613a8473e h1:QeGHUjKpTz3bQUgndQd/DA9v6hW1lIvr96YMVC/PMzA=
 github.com/whatsfordinner/bakery/pkg/trace v0.0.0-20210614120009-a37613a8473e/go.mod h1:tax4xIqtdcB+v5ZTkHT7Fg3XkitNlIMaIUC+sfPSt50=
 github.com/whatsfordinner/bakery/pkg/trace v0.0.0-20210614121829-775c4b8799ba h1:iysZSGHuguPhaqpwM/PWhDw3US1xNI9dWkJ4UQvg4Ko=

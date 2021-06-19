@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"hash/fnv"
 	"log"
 	"time"
@@ -8,16 +9,16 @@ import (
 	"github.com/whatsfordinner/bakery/pkg/orders"
 )
 
-func (a *app) bakeOrder(orderMessage *orders.OrderMessage) error {
+func (a *app) bakeOrder(ctx context.Context, orderMessage *orders.OrderMessage) error {
 	log.Printf("Received order: %+v", *orderMessage)
-	err := a.DB.UpdateOrder(orderMessage.OrderKey, "baking")
+	err := a.DB.UpdateOrder(ctx, orderMessage.OrderKey, "baking")
 
 	if err != nil {
 		return err
 	}
 
 	bakePastry(orderMessage.Pastry)
-	err = a.DB.UpdateOrder(orderMessage.OrderKey, "finished")
+	err = a.DB.UpdateOrder(ctx, orderMessage.OrderKey, "finished")
 
 	if err != nil {
 		return err
@@ -26,7 +27,7 @@ func (a *app) bakeOrder(orderMessage *orders.OrderMessage) error {
 	return nil
 }
 
-func (a *app) rejectOrder(err error) {
+func (a *app) rejectOrder(ctx context.Context, err error) {
 	log.Print(err.Error())
 }
 

@@ -16,19 +16,17 @@ type app struct {
 }
 
 func (a *app) init(c *config.Config) {
-	a.DB = new(orders.OrderDB)
-	err := a.DB.Connect(c.DBHost)
-
+	db, err := orders.NewDB(c)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	a.DB = db
 
-	a.Queue = new(orders.OrderQueue)
-	err = a.Queue.Connect(c.RabbitHost, c.RabbitUsername, c.RabbitPassword)
-
+	queue, err := orders.NewOrderQueue(c)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	a.Queue = queue
 }
 
 func (a *app) run() {
