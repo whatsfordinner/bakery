@@ -61,12 +61,16 @@ github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210615113430-c552aa96f02b h
 github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210615113430-c552aa96f02b/go.mod h1:AhnVJH2oDa498u+CF37f5P9U6aHEvL1YXSGQPEW1ROc=
 github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210616105620-4638e7736c8f h1:+utLyWlTqJYjxluMuIAe/mKY+v/m62q3bwKxabDjXGo=
 github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210616105620-4638e7736c8f/go.mod h1:AhnVJH2oDa498u+CF37f5P9U6aHEvL1YXSGQPEW1ROc=
+github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210616124049-f531dac6597d h1:NHi3Bt+Dg2kYC8ukHfX1YXuL+6fLeUpIU042rgq+IRE=
+github.com/whatsfordinner/bakery/pkg/config v0.0.0-20210616124049-f531dac6597d/go.mod h1:AhnVJH2oDa498u+CF37f5P9U6aHEvL1YXSGQPEW1ROc=
 github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210616105620-4638e7736c8f h1:QJ5BfV7G8lM2ugbOkPdOl09atQI3JfjH87a1BETlNPc=
 github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210616105620-4638e7736c8f/go.mod h1:4uS+X/QE7SJbAq4LEB/xPnIm1im4YQqflOfA0Kz11TE=
 github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210616124049-f531dac6597d h1:89DalTnR/7nYARwOs5XVr7iakXHuIH65ADI4G3f/c7w=
 github.com/whatsfordinner/bakery/pkg/orders v0.0.0-20210616124049-f531dac6597d/go.mod h1:4uS+X/QE7SJbAq4LEB/xPnIm1im4YQqflOfA0Kz11TE=
 github.com/whatsfordinner/bakery/pkg/trace v0.0.0-20210615135850-a20c93ba5d2f h1:jiARHZcT5997BRxBg5XfWmRD40x8tXLdPxR6o/4kpyc=
 github.com/whatsfordinner/bakery/pkg/trace v0.0.0-20210615135850-a20c93ba5d2f/go.mod h1:yFGYR28kiCdy9SrkrFCjPq8EJJis6qpsNwhZ/pGuVN4=
+github.com/whatsfordinner/bakery/pkg/trace v0.0.0-20210616124049-f531dac6597d h1:xNZ5NROe7fx/VVy1lZHKPDem3x8oVScUaR/0YNcgo9U=
+github.com/whatsfordinner/bakery/pkg/trace v0.0.0-20210616124049-f531dac6597d/go.mod h1:yFGYR28kiCdy9SrkrFCjPq8EJJis6qpsNwhZ/pGuVN4=
 go.opentelemetry.io/otel v0.20.0 h1:eaP0Fqu7SXHwvjiqDq83zImeehOHX8doTvU9AwXON8g=
 go.opentelemetry.io/otel v0.20.0/go.mod h1:Y3ugLH2oa81t5QO+Lty+zXf8zC9L26ax4Nzoxm/dooo=
 go.opentelemetry.io/otel/exporters/otlp v0.20.0 h1:PTNgq9MRmQqqJY0REVbZFvwkYOA85vbdQU/nVfxDyqg=

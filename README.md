@@ -1,13 +1,101 @@
 # Bakery
 
-'Bakery' is a toy, distributed system for playing with OpenTelemetry for instrumentation
+_Bakery_ is a very simple distributed service I used to learn how to use [Tilt](https://tilt.dev/) and the [OpenTelemetry](https://opentelemetry.io/) Go API.  It consists of 4 parts:  
+* 'Reception' - a HTTP server that publishes to a queue  
+* 'Baker' - a queue consumer  
+* A [RabbitMQ](https://rabbitmq.com/) queue broker  
+* A [Redis](https://redis.io/) database used to persist data between the publisher and consumer  
 
-## Overview
+![Basic architecture diagram showing 'reception' using a publishing to a queue and using a database and 'baker' consuming from the queue and using the same database](doc/img/overview.png)
 
-![Diagram of the general structure of the app](./doc/img/overview.png)
+Additionally, when run with Tilt a [Jaeger](https://www.jaegertracing.io/) service is started that 'Baker' and 'Reception' will publish traces to.
 
-The app consists of:  
-* a REST API 'reception' that accepts new orders and provides the status of orders  
-* a RabbitMQ queue that new orders are placed on  
-* a queue consumer 'baker' that accepts orders off of the queue and bakes them
-* a Redis database that tracks orders and their status
+## Running  
+
+The following tools and versions were used for developing and testing _Bakery_:
+
+| Tool | Version |
+|------|---------|
+| Go | v.1.14.2 |
+| Tilt | v0.20.7 |  
+| Minikube | v1.21.0 |
+| Kubernetes | v.1.20.7 |
+
+I recommend using a version manager like [asdf](https://github.com/asdf-vm/asdf) or [goenv](https://github.com/syndbg/goenv) to manage tool versions. The [Tilt documentation](https://docs.tilt.dev/choosing_clusters.html) lists options for local Kubernetes clusters.
+
+Once the required tools are installed, start the service using Tilt:  
+
+```
+$ tilt up
+Tilt started on http://localhost:10350/
+v0.20.7, built 2021-06-10
+
+(space) to open the browser
+(s) to stream logs (--stream=true)
+(t) to open legacy terminal mode (--legacy=true)
+(ctrl-c) to exit
+```
+
+Opening the browser should show all the services being started and eventually available:  
+
+![Tilt browser with services started](doc/img/tilt.png)
+
+You can confirm the `reception` service has started by sending a request to the exposed endpoint:
+
+```
+$ curl -s http://localhost:8000/ | jq
+{
+  "message": "reception is attended"
+}
+```
+
+## Basic Use
+
+Create a new order by sending a `POST` request to the `orders` endpoint:
+
+```
+$ curl -s -X POST \
+  -d '{"customer": "homer", "pastry": "la bombe"}' \
+  http://localhost:8000/orders | jq
+{
+  "orderKey": "1d5fba984abea5a7de4e2de5d1462bd3"
+}
+```
+
+Check the status of the order by using the provided order key:
+
+```
+$ curl -s http://localhost:8000/orders/1d5fba984abea5a7de4e2de5d1462bd3 | jq
+{
+  "pastry": "la bombe",
+  "customer": "homer",
+  "orderTime": "2021-06-19T11:21:24Z",
+  "status": "finished"
+}
+```
+
+Examine traces in Jaeger by browing the exposed endpoint (http://localhost:16686):
+
+![Jaeger UI showing a trace of the 'reception' service](doc/img/jaeger-reception.png)
+
+![Jarger UI showing a trace of the 'baker' service](doc/img/jaeger-baker.png)
+
+# Clean up
+
+Use tilt to stop the services and delete them from your cluster:  
+
+```
+$ tilt down
+Beginning Tiltfile execution
+Successfully loaded Tiltfile (19.0233ms)
+Deleting kubernetes objects:
+→ Deployment/baker
+→ Deployment/redis
+→ Deployment/rabbitmq
+→ Deployment/jaeger
+→ Deployment/reception
+→ Service/jaeger
+→ Service/redis
+→ Service/rabbitmq
+→ ConfigMap/connection-details
+```
