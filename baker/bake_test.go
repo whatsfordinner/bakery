@@ -20,8 +20,11 @@ func TestBakePastry(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
+			a, teardown := setUpApp()
+			defer teardown()
+
 			startTime := time.Now()
-			bakePastry(test.pastryName)
+			a.bakePastry(context.Background(), test.pastryName)
 			finishTime := time.Since(startTime)
 
 			if test.minDuration.Milliseconds() > finishTime.Milliseconds() {

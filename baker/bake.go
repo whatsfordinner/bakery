@@ -17,7 +17,7 @@ func (a *app) bakeOrder(ctx context.Context, orderMessage *orders.OrderMessage) 
 		return err
 	}
 
-	bakePastry(orderMessage.Pastry)
+	a.bakePastry(ctx, orderMessage.Pastry)
 	err = a.DB.UpdateOrder(ctx, orderMessage.OrderKey, "finished")
 
 	if err != nil {
@@ -31,7 +31,9 @@ func (a *app) rejectOrder(ctx context.Context, err error) {
 	log.Print(err.Error())
 }
 
-func bakePastry(pastry string) {
+func (a *app) bakePastry(ctx context.Context, pastry string) {
+	_, span := a.tracer.Start(ctx, "baking")
+	defer span.End()
 	h := fnv.New32a()
 	h.Write([]byte(pastry))
 	bakingTime := time.Duration(h.Sum32() % 5000)

@@ -8,6 +8,8 @@ import (
 	"github.com/streadway/amqp"
 	"github.com/whatsfordinner/bakery/pkg/config"
 	"go.opentelemetry.io/otel"
+
+	tracer "github.com/whatsfordinner/bakery/pkg/trace"
 )
 
 func TestRabbitMQConnect(t *testing.T) {
@@ -160,7 +162,7 @@ func TestPublishOrderMessage(t *testing.T) {
 }
 
 func TestConsumeOrderQueue(t *testing.T) {
-	goodOrderMessage := &OrderMessage{nil, makeKey(NewOrder("homer", "la bombe")), "la bombe"}
+	goodOrderMessage := &OrderMessage{tracer.ContextCarrier{Fields: map[string]string{}}, makeKey(NewOrder("homer", "la bombe")), "la bombe"}
 	goodMessage, _ := json.Marshal(goodOrderMessage)
 	badMessage := []byte("foobarbaz")
 	tests := map[string]struct {
@@ -179,7 +181,7 @@ func TestConsumeOrderQueue(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			goodFunc := func(ctx context.Context, order *OrderMessage) error {
-				if *order != *goodOrderMessage {
+				if order.OrderKey != goodOrderMessage.OrderKey || order.Pastry != goodOrderMessage.Pastry {
 					t.Fatalf("Received message does not match good message\nExpected: %+v\nGot: %+v", *goodOrderMessage, *order)
 				}
 				return nil

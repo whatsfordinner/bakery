@@ -8,11 +8,14 @@ import (
 
 	"github.com/whatsfordinner/bakery/pkg/config"
 	"github.com/whatsfordinner/bakery/pkg/orders"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type app struct {
-	DB    *orders.OrderDB
-	Queue *orders.OrderQueue
+	DB     *orders.OrderDB
+	Queue  *orders.OrderQueue
+	tracer trace.Tracer
 }
 
 func (a *app) init(c *config.Config) {
@@ -27,6 +30,8 @@ func (a *app) init(c *config.Config) {
 		log.Fatal(err.Error())
 	}
 	a.Queue = queue
+
+	a.tracer = otel.Tracer("")
 }
 
 func (a *app) run() {
