@@ -76,9 +76,9 @@ $ curl -s http://localhost:8000/orders/1d5fba984abea5a7de4e2de5d1462bd3 | jq
 
 Examine traces in Jaeger by browing the exposed endpoint (http://localhost:16686):
 
-![Jaeger UI showing a trace of the 'reception' service](doc/img/jaeger-reception.png)
+![Jaeger UI showing a full collapsed trace](doc/img/jaeger-trace.png)
 
-![Jarger UI showing a trace of the 'baker' service](doc/img/jaeger-baker.png)
+![Jarger UI showing expanded sections of a trace](doc/img/jaeger-expand.png)
 
 # Clean up
 
