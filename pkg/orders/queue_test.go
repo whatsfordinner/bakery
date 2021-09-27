@@ -111,9 +111,6 @@ func TestPublishOrderMessage(t *testing.T) {
 		"not connected to RabbitMQ": {false, true},
 	}
 
-	testOrder := NewOrder("homer", "la bombe")
-	testOrderKey := makeKey(testOrder)
-
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			tearDownRabbitMQ := setUpRabbitMQ()
@@ -131,7 +128,7 @@ func TestPublishOrderMessage(t *testing.T) {
 				}
 			}
 
-			err := q.PublishOrderMessage(context.Background(), &OrderMessage{testOrderKey, "la bombe"})
+			err := q.PublishOrderMessage(context.Background(), "testkey", "la bombe")
 
 			if err != nil && !test.shouldErr {
 				t.Fatalf("Expected no error but got %s", err.Error())
@@ -163,7 +160,7 @@ func TestPublishOrderMessage(t *testing.T) {
 }
 
 func TestConsumeOrderQueue(t *testing.T) {
-	goodOrderMessage := &OrderMessage{makeKey(NewOrder("homer", "la bombe")), "la bombe"}
+	goodOrderMessage := &OrderMessage{nil, makeKey(NewOrder("homer", "la bombe")), "la bombe"}
 	goodMessage, _ := json.Marshal(goodOrderMessage)
 	badMessage := []byte("foobarbaz")
 	tests := map[string]struct {

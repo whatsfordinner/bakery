@@ -10,13 +10,15 @@ import (
 	"github.com/whatsfordinner/bakery/pkg/config"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
 
 // OrderMessage contains the body of the queue message
 type OrderMessage struct {
-	OrderKey string `json:"orderKey"`
-	Pastry   string `json:"pastry"`
+	TraceContext propagation.TextMapCarrier `json:"traceContext"`
+	OrderKey     string                     `json:"orderKey"`
+	Pastry       string                     `json:"pastry"`
 }
 
 // OrderQueue manages the connection to RabbitMQ
@@ -100,13 +102,13 @@ func (q *OrderQueue) DeclareQueue() error {
 }
 
 // PublishOrderMessage publishes an OrderMessage to the queue
-func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderMessage *OrderMessage) error {
+func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderKey string, pastry string) error {
 	_, span := q.tracer.Start(ctx, "publish-order")
 	defer span.End()
 
 	span.SetAttributes(
-		attribute.String("order-key", orderMessage.OrderKey),
-		attribute.String("pastry", orderMessage.Pastry),
+		attribute.String("order-key", orderKey),
+		attribute.String("pastry", pastry),
 		attribute.Bool("success", false),
 	)
 
@@ -122,6 +124,10 @@ func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderMessage *Orde
 
 	defer channel.Close()
 
+	orderMessage := new(OrderMessage)
+	otel.GetTextMapPropagator().Inject(ctx, orderMessage.TraceContext)
+	orderMessage.OrderKey = orderKey
+	orderMessage.Pastry = pastry
 	messageBody, err := json.Marshal(*orderMessage)
 
 	if err != nil {
@@ -180,6 +186,8 @@ func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func
 
 			orderMessage := new(OrderMessage)
 			err := json.Unmarshal(order.Body, orderMessage)
+
+			ctx = otel.GetTextMapPropagator().Extract(ctx, orderMessage.TraceContext)
 
 			if err != nil {
 				errorFunc(ctx, err)
