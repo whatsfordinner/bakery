@@ -12,6 +12,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
+
+	tracer "github.com/whatsfordinner/bakery/pkg/trace"
 )
 
 // OrderMessage contains the body of the queue message
@@ -125,6 +127,7 @@ func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderKey string, p
 	defer channel.Close()
 
 	orderMessage := new(OrderMessage)
+	orderMessage.TraceContext = tracer.ContextCarrier{Fields: map[string]string{}}
 	otel.GetTextMapPropagator().Inject(ctx, orderMessage.TraceContext)
 	orderMessage.OrderKey = orderKey
 	orderMessage.Pastry = pastry
