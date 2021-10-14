@@ -1,20 +1,18 @@
 package trace
 
-type ContextCarrier struct {
-	Fields map[string]string
-}
+type ContextCarrier map[string]string
 
 func (c ContextCarrier) Get(key string) string {
-	return c.Fields[key]
+	return c[key]
 }
 
 func (c ContextCarrier) Set(key string, value string) {
-	c.Fields[key] = value
+	c[key] = value
 }
 
 func (c ContextCarrier) Keys() []string {
-	keys := make([]string, 0, len(c.Fields))
-	for k := range c.Fields {
+	keys := make([]string, 0, len(c))
+	for k := range c {
 		keys = append(keys, k)
 	}
 

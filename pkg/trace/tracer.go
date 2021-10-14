@@ -21,21 +21,18 @@ func InitTracer(ctx context.Context, c *config.Config) (func(), error) {
 		sdktrace.WithResource(resource.NewWithAttributes(semconv.ServiceNameKey.String(c.ServiceName))),
 	)
 
-	if c.JaegerEndpoint != "" {
-		jaegerExporter, err := otlp.NewExporter(
-			ctx,
-			otlpgrpc.NewDriver(
-				otlpgrpc.WithEndpoint(c.JaegerEndpoint),
-				otlpgrpc.WithDialOption(grpc.WithInsecure()),
-			),
-		)
+	otlpExporter, err := otlp.NewExporter(
+		ctx,
+		otlpgrpc.NewDriver(
+			otlpgrpc.WithDialOption(grpc.WithInsecure()),
+		),
+	)
 
-		if err != nil {
-			return nil, err
-		}
-
-		tp.RegisterSpanProcessor(sdktrace.NewBatchSpanProcessor(jaegerExporter))
+	if err != nil {
+		return nil, err
 	}
+
+	tp.RegisterSpanProcessor(sdktrace.NewBatchSpanProcessor(otlpExporter))
 
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(

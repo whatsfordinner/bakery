@@ -126,7 +126,7 @@ func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderKey string, p
 	defer channel.Close()
 
 	orderMessage := new(OrderMessage)
-	orderMessage.TraceContext = tracer.ContextCarrier{Fields: map[string]string{}}
+	orderMessage.TraceContext = tracer.ContextCarrier{}
 	otel.GetTextMapPropagator().Inject(ctx, orderMessage.TraceContext)
 	orderMessage.OrderKey = orderKey
 	orderMessage.Pastry = pastry
