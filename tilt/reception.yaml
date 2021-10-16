@@ -1,0 +1,25 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reception
+  labels:
+    app: reception
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reception
+  template:
+    metadata:
+      labels:
+        app: reception
+    spec:
+      containers:
+      - name: reception
+        image: bakery/reception
+        envFrom:
+        - configMapRef:
+            name: connection-details
+        ports:
+        - containerPort: 8000

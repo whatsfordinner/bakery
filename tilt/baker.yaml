@@ -1,0 +1,23 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: baker
+  labels:
+    app: baker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: baker
+  template:
+    metadata:
+      labels:
+        app: baker
+    spec:
+      containers:
+      - name: baker
+        image: bakery/baker
+        envFrom:
+        - configMapRef:
+            name: connection-details

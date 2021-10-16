@@ -37,7 +37,10 @@ docker_build_with_restart(
   ]
 )
 
-k8s_yaml('tilt/deploy.yaml')
+k8s_yaml('tilt/dependencies.yaml')
+k8s_yaml('tilt/tracing.yaml')
+k8s_yaml('tilt/baker.yaml')
+k8s_yaml('tilt/reception.yaml')
 
 k8s_resource(
   workload='reception',
