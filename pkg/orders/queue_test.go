@@ -162,7 +162,7 @@ func TestPublishOrderMessage(t *testing.T) {
 }
 
 func TestConsumeOrderQueue(t *testing.T) {
-	goodOrderMessage := &OrderMessage{tracer.ContextCarrier{Fields: map[string]string{}}, makeKey(NewOrder("homer", "la bombe")), "la bombe"}
+	goodOrderMessage := &OrderMessage{tracer.ContextCarrier{}, makeKey(NewOrder("homer", "la bombe")), "la bombe"}
 	goodMessage, _ := json.Marshal(goodOrderMessage)
 	badMessage := []byte("foobarbaz")
 	tests := map[string]struct {
