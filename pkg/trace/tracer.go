@@ -28,7 +28,7 @@ func InitTracer(ctx context.Context, c *config.Config) (func(), error) {
 
 	otlpExporter, err := otlptracegrpc.New(
 		ctx,
-		otlptracegrpc.WithDialOption(grpc.WithInsecure()),
+		otlptracegrpc.WithInsecure(),
 		otlptracegrpc.WithDialOption(grpc.WithBlock()),
 	)
 

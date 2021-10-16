@@ -6,7 +6,7 @@ metadata:
 data:
   DB_HOST: redis:6379
   RABBIT_HOST: rabbitmq:5672
-  OTEL_EXPORTER_OTLP_ENDPOINT: jaeger:55680
+  OTEL_EXPORTER_OTLP_ENDPOINT: otel-collector:4317
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -155,6 +155,100 @@ spec:
     name: metrics
   selector:
     app: redis
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+data:
+  otel-collector-config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    exporters:
+      otlp:
+        endpoint: "jaeger:55680"
+        insecure: true
+    processors:
+      batch:
+      memory_limiter:
+        ballast_size_mib: 165
+        limit_mib: 400
+        spike_limit_mib: 100
+        check_interval: 5s
+    extensions:
+      zpages: {}
+    service:
+      extensions:
+        - zpages
+      pipelines:
+        traces:
+          receivers:
+            - otlp
+          processors:
+            - memory_limiter
+            - batch
+          exporters:
+            - otlp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  labels:
+    app: otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+      - name: otel-collector
+        image: otel/opentelemetry-collector:latest
+        command:
+        - "/otelcol"
+        - "--config=/conf/otel-collector-config.yaml"
+        resources:
+          limits:
+            cpu: 1
+            memory: 2Gi
+          requests:
+            cpu: 200m
+            memory: 400Mi
+        ports:
+        - containerPort: 55679
+        - containerPort: 4317
+        volumeMounts:
+        - name: otel-collector-config-vol
+          mountPath: /conf
+      volumes:
+      - configMap:
+          name: otel-collector-config
+          items:
+          - key: otel-collector-config
+            path: otel-collector-config.yaml
+        name: otel-collector-config-vol
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  labels:
+    app: otel-collector
+spec:
+  ports:
+  - port: 4317
+    protocol: TCP
+    name: otelgrpc
+  selector:
+    app: otel-collector
 ---
 apiVersion: apps/v1
 kind: Deployment
