@@ -108,9 +108,9 @@ func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderKey string, p
 	defer span.End()
 
 	span.SetAttributes(
-		attribute.String("order-key", orderKey),
-		attribute.String("pastry", pastry),
-		attribute.Bool("success", false),
+		attribute.String("bakery.order_key", orderKey),
+		attribute.String("bakery.pastry", pastry),
+		attribute.Bool("queue.success", false),
 	)
 
 	if q.Connection == nil {
@@ -149,7 +149,7 @@ func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderKey string, p
 		return err
 	}
 
-	span.SetAttributes(attribute.Bool("success", true))
+	span.SetAttributes(attribute.Bool("queue.success", true))
 	return nil
 }
 
@@ -184,7 +184,7 @@ func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func
 	go func() {
 		for order := range orders {
 			ctx, span := q.tracer.Start(ctx, "receive-order")
-			span.SetAttributes(attribute.Bool("success", false))
+			span.SetAttributes(attribute.Bool("queue.success", false))
 
 			orderMessage := new(OrderMessage)
 			err := json.Unmarshal(order.Body, orderMessage)
@@ -194,8 +194,8 @@ func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func
 			} else {
 				ctx = otel.GetTextMapPropagator().Extract(ctx, orderMessage.TraceContext)
 				span.SetAttributes(
-					attribute.String("order-key", orderMessage.OrderKey),
-					attribute.String("pastry", orderMessage.Pastry),
+					attribute.String("bakery.order_key", orderMessage.OrderKey),
+					attribute.String("bakery.pastry", orderMessage.Pastry),
 				)
 				err = processFunction(ctx, orderMessage)
 
@@ -209,7 +209,7 @@ func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func
 			if err != nil {
 				errorFunc(ctx, err)
 			}
-			span.SetAttributes(attribute.Bool("success", true))
+			span.SetAttributes(attribute.Bool("queue.success", true))
 			span.End()
 		}
 	}()

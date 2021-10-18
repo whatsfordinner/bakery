@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/whatsfordinner/bakery/pkg/config"
 	"github.com/whatsfordinner/bakery/pkg/orders"
@@ -11,11 +10,10 @@ import (
 
 func TestBakePastry(t *testing.T) {
 	tests := map[string]struct {
-		pastryName  string
-		minDuration time.Duration
+		pastryName string
 	}{
-		"no pastry":   {"", 0},
-		"some pastry": {"la bombe", 3000},
+		"no pastry":   {""},
+		"some pastry": {"la bombe"},
 	}
 
 	for name, test := range tests {
@@ -23,13 +21,7 @@ func TestBakePastry(t *testing.T) {
 			a, teardown := setUpApp()
 			defer teardown()
 
-			startTime := time.Now()
 			a.bakePastry(context.Background(), test.pastryName)
-			finishTime := time.Since(startTime)
-
-			if test.minDuration.Milliseconds() > finishTime.Milliseconds() {
-				t.Fatalf("Expected to sleep for %dms but only slept for %dms", test.minDuration.Milliseconds(), finishTime.Milliseconds())
-			}
 		})
 	}
 }

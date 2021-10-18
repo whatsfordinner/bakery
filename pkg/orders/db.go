@@ -56,19 +56,19 @@ func (db *OrderDB) CreateOrder(ctx context.Context, order *Order) (string, error
 	defer span.End()
 
 	span.SetAttributes(
-		attribute.String("redis-operation", "HSET"),
-		attribute.Bool("success", false),
+		attribute.String("db.redis_operation", "HSET"),
+		attribute.Bool("db.success", false),
 	)
 
 	key := makeKey(order)
-	span.SetAttributes(attribute.String("order-key", key))
+	span.SetAttributes(attribute.String("db.order_key", key))
 	err := db.Pool.Do(radix.FlatCmd(nil, "HSET", key, *order))
 
 	if err != nil {
 		return "", err
 	}
 
-	span.SetAttributes(attribute.Bool("success", true))
+	span.SetAttributes(attribute.Bool("db.success", true))
 	return key, nil
 }
 
@@ -78,9 +78,9 @@ func (db *OrderDB) ReadOrder(ctx context.Context, orderKey string) (*Order, erro
 	defer span.End()
 
 	span.SetAttributes(
-		attribute.String("redis-operation", "HGETALL"),
-		attribute.String("order-key", orderKey),
-		attribute.Bool("found-order", false),
+		attribute.String("db.redis_operation", "HGETALL"),
+		attribute.String("db.order_key", orderKey),
+		attribute.Bool("db.found_order", false),
 	)
 
 	order := new(Order)
@@ -94,7 +94,7 @@ func (db *OrderDB) ReadOrder(ctx context.Context, orderKey string) (*Order, erro
 		return nil, nil
 	}
 
-	span.SetAttributes(attribute.Bool("found-order", true))
+	span.SetAttributes(attribute.Bool("found_order", true))
 	return order, nil
 }
 
@@ -104,10 +104,10 @@ func (db *OrderDB) UpdateOrder(ctx context.Context, orderKey string, newStatus s
 	defer span.End()
 
 	span.SetAttributes(
-		attribute.String("redis-operation", "HSET"),
-		attribute.String("order-key", orderKey),
-		attribute.String("order-status", newStatus),
-		attribute.Bool("success", false),
+		attribute.String("db.redis_operation", "HSET"),
+		attribute.String("db.order_key", orderKey),
+		attribute.String("db.order_status", newStatus),
+		attribute.Bool("db.success", false),
 	)
 
 	// Check that the order exists first
@@ -125,7 +125,7 @@ func (db *OrderDB) UpdateOrder(ctx context.Context, orderKey string, newStatus s
 		return err
 	}
 
-	span.SetAttributes(attribute.Bool("success", true))
+	span.SetAttributes(attribute.Bool("db.success", true))
 	return nil
 }
 
