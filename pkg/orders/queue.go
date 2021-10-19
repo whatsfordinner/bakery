@@ -11,15 +11,12 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-
-	tracer "github.com/whatsfordinner/bakery/pkg/trace"
 )
 
 // OrderMessage contains the body of the queue message
 type OrderMessage struct {
-	TraceContext tracer.ContextCarrier `json:"traceContext"`
-	OrderKey     string                `json:"orderKey"`
-	Pastry       string                `json:"pastry"`
+	OrderKey string `json:"orderKey"`
+	Pastry   string `json:"pastry"`
 }
 
 // OrderQueue manages the connection to RabbitMQ
@@ -104,7 +101,7 @@ func (q *OrderQueue) DeclareQueue() error {
 
 // PublishOrderMessage publishes an OrderMessage to the queue
 func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderKey string, pastry string) error {
-	_, span := q.tracer.Start(ctx, "publish-order")
+	_, span := q.tracer.Start(ctx, "publish-order", trace.WithSpanKind(trace.SpanKindProducer))
 	defer span.End()
 
 	span.SetAttributes(
@@ -126,8 +123,6 @@ func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderKey string, p
 	defer channel.Close()
 
 	orderMessage := new(OrderMessage)
-	orderMessage.TraceContext = tracer.ContextCarrier{}
-	otel.GetTextMapPropagator().Inject(ctx, orderMessage.TraceContext)
 	orderMessage.OrderKey = orderKey
 	orderMessage.Pastry = pastry
 	messageBody, err := json.Marshal(*orderMessage)
@@ -183,7 +178,7 @@ func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func
 
 	go func() {
 		for order := range orders {
-			ctx, span := q.tracer.Start(ctx, "receive-order")
+			ctx, span := q.tracer.Start(ctx, "receive-order", trace.WithSpanKind(trace.SpanKindConsumer))
 			span.SetAttributes(attribute.Bool("queue.success", false))
 
 			orderMessage := new(OrderMessage)
@@ -192,7 +187,6 @@ func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func
 			if err != nil {
 				errorFunc(ctx, err)
 			} else {
-				ctx = otel.GetTextMapPropagator().Extract(ctx, orderMessage.TraceContext)
 				span.SetAttributes(
 					attribute.String("bakery.order_key", orderMessage.OrderKey),
 					attribute.String("bakery.pastry", orderMessage.Pastry),

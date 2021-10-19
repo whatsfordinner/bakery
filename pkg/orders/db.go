@@ -52,7 +52,7 @@ func (db *OrderDB) Disconnect() error {
 
 // CreateOrder writes a full hash to Redis and returns the key
 func (db *OrderDB) CreateOrder(ctx context.Context, order *Order) (string, error) {
-	_, span := db.tracer.Start(ctx, "create-order")
+	_, span := db.tracer.Start(ctx, "create-order", trace.WithSpanKind(trace.SpanKindClient))
 	defer span.End()
 
 	span.SetAttributes(
@@ -74,7 +74,7 @@ func (db *OrderDB) CreateOrder(ctx context.Context, order *Order) (string, error
 
 // ReadOrder returns the *Order associated with the provided orderID or an error
 func (db *OrderDB) ReadOrder(ctx context.Context, orderKey string) (*Order, error) {
-	_, span := db.tracer.Start(ctx, "read-order")
+	_, span := db.tracer.Start(ctx, "read-order", trace.WithSpanKind(trace.SpanKindClient))
 	defer span.End()
 
 	span.SetAttributes(
@@ -100,7 +100,7 @@ func (db *OrderDB) ReadOrder(ctx context.Context, orderKey string) (*Order, erro
 
 // UpdateOrder updates the status of an order in Redis
 func (db *OrderDB) UpdateOrder(ctx context.Context, orderKey string, newStatus string) error {
-	ctx, span := db.tracer.Start(ctx, "update-order")
+	ctx, span := db.tracer.Start(ctx, "update-order", trace.WithSpanKind(trace.SpanKindClient))
 	defer span.End()
 
 	span.SetAttributes(

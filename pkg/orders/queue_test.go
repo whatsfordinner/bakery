@@ -8,8 +8,6 @@ import (
 	"github.com/streadway/amqp"
 	"github.com/whatsfordinner/bakery/pkg/config"
 	"go.opentelemetry.io/otel"
-
-	tracer "github.com/whatsfordinner/bakery/pkg/trace"
 )
 
 func TestRabbitMQConnect(t *testing.T) {
@@ -162,7 +160,7 @@ func TestPublishOrderMessage(t *testing.T) {
 }
 
 func TestConsumeOrderQueue(t *testing.T) {
-	goodOrderMessage := &OrderMessage{tracer.ContextCarrier{}, makeKey(NewOrder("homer", "la bombe")), "la bombe"}
+	goodOrderMessage := &OrderMessage{makeKey(NewOrder("homer", "la bombe")), "la bombe"}
 	goodMessage, _ := json.Marshal(goodOrderMessage)
 	badMessage := []byte("foobarbaz")
 	tests := map[string]struct {
