@@ -11,12 +11,15 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	tracing "github.com/whatsfordinner/bakery/pkg/trace"
 )
 
 // OrderMessage contains the body of the queue message
 type OrderMessage struct {
-	OrderKey string `json:"orderKey"`
-	Pastry   string `json:"pastry"`
+	TraceContext tracing.ContextCarrier `json:"traceContext"`
+	OrderKey     string                 `json:"orderKey"`
+	Pastry       string                 `json:"pastry"`
 }
 
 // OrderQueue manages the connection to RabbitMQ
@@ -107,7 +110,7 @@ func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderKey string, p
 	span.SetAttributes(
 		attribute.String("bakery.order_key", orderKey),
 		attribute.String("bakery.pastry", pastry),
-		attribute.Bool("queue.success", false),
+		attribute.Bool("queue.publish.success", false),
 	)
 
 	if q.Connection == nil {
@@ -117,17 +120,25 @@ func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderKey string, p
 	channel, err := q.Connection.Channel()
 
 	if err != nil {
+		span.AddEvent(
+			fmt.Sprintf("Failed to open channel to RabbitMQ: %s", err.Error()),
+		)
 		return err
 	}
 
 	defer channel.Close()
 
 	orderMessage := new(OrderMessage)
+	orderMessage.TraceContext = tracing.ContextCarrier{}
+	otel.GetTextMapPropagator().Inject(ctx, orderMessage.TraceContext)
 	orderMessage.OrderKey = orderKey
 	orderMessage.Pastry = pastry
 	messageBody, err := json.Marshal(*orderMessage)
 
 	if err != nil {
+		span.AddEvent(
+			fmt.Sprintf("Failed to marshal message: %s", err.Error()),
+		)
 		return err
 	}
 
@@ -141,10 +152,13 @@ func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderKey string, p
 			Body:        messageBody,
 		},
 	); err != nil {
+		span.AddEvent(
+			fmt.Sprintf("Failed to publish message to queue: %s", err.Error()),
+		)
 		return err
 	}
 
-	span.SetAttributes(attribute.Bool("queue.success", true))
+	span.SetAttributes(attribute.Bool("queue.publish.success", true))
 	return nil
 }
 
@@ -178,32 +192,62 @@ func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func
 
 	go func() {
 		for order := range orders {
-			ctx, span := q.tracer.Start(ctx, "receive-order", trace.WithSpanKind(trace.SpanKindConsumer))
-			span.SetAttributes(attribute.Bool("queue.success", false))
-
 			orderMessage := new(OrderMessage)
 			err := json.Unmarshal(order.Body, orderMessage)
 
 			if err != nil {
-				errorFunc(ctx, err)
-			} else {
-				span.SetAttributes(
-					attribute.String("bakery.order_key", orderMessage.OrderKey),
-					attribute.String("bakery.pastry", orderMessage.Pastry),
+				ctx, span := q.tracer.Start(
+					ctx, "receive-order",
+					trace.WithSpanKind(trace.SpanKindConsumer),
 				)
-				err = processFunction(ctx, orderMessage)
 
-				if err != nil {
-					errorFunc(ctx, err)
-				}
+				span.SetAttributes(attribute.Bool("queue.consume.success", false))
+				span.AddEvent(
+					fmt.Sprintf("Unable to unmarshal message content: %s", err.Error()),
+				)
+
+				errorFunc(ctx, err)
+				span.End()
+
+				return
 			}
+
+			remoteCtx := otel.GetTextMapPropagator().Extract(ctx, orderMessage.TraceContext)
+			ctx, span := q.tracer.Start(
+				ctx, "receive-order",
+				trace.WithSpanKind(trace.SpanKindConsumer),
+				trace.WithLinks(trace.LinkFromContext(remoteCtx)),
+			)
+			span.SetAttributes(
+				attribute.Bool("queue.consume.success", false),
+				attribute.String("bakery.order_key", orderMessage.OrderKey),
+				attribute.String("bakery.pastry", orderMessage.Pastry),
+			)
+
+			err = processFunction(ctx, orderMessage)
+
+			if err != nil {
+				span.AddEvent(
+					fmt.Sprintf("Message processing error: %s", err.Error()),
+				)
+				errorFunc(ctx, err)
+				return
+			}
+
+			span.AddEvent("Message processed")
 
 			err = order.Ack(false)
 
 			if err != nil {
+				span.AddEvent(
+					fmt.Sprintf("Unable to acknowledge message: %s", err.Error()),
+				)
 				errorFunc(ctx, err)
+				return
 			}
-			span.SetAttributes(attribute.Bool("queue.success", true))
+
+			span.AddEvent("Message acknoqledged")
+			span.SetAttributes(attribute.Bool("queue.consume.success", true))
 			span.End()
 		}
 	}()
