@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/streadway/amqp"
 	"github.com/whatsfordinner/bakery/pkg/config"
@@ -18,8 +19,8 @@ import (
 // OrderMessage contains the body of the queue message
 type OrderMessage struct {
 	TraceContext tracing.ContextCarrier `json:"traceContext"`
+	TimeEnqueued string                 `json:"timeEnqueued"`
 	OrderKey     string                 `json:"orderKey"`
-	Pastry       string                 `json:"pastry"`
 }
 
 // OrderQueue manages the connection to RabbitMQ
@@ -103,13 +104,12 @@ func (q *OrderQueue) DeclareQueue() error {
 }
 
 // PublishOrderMessage publishes an OrderMessage to the queue
-func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderKey string, pastry string) error {
+func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderKey string) error {
 	_, span := q.tracer.Start(ctx, "publish-order", trace.WithSpanKind(trace.SpanKindProducer))
 	defer span.End()
 
 	span.SetAttributes(
 		attribute.String("bakery.order_key", orderKey),
-		attribute.String("bakery.pastry", pastry),
 		attribute.Bool("queue.publish.success", false),
 	)
 
@@ -131,8 +131,8 @@ func (q *OrderQueue) PublishOrderMessage(ctx context.Context, orderKey string, p
 	orderMessage := new(OrderMessage)
 	orderMessage.TraceContext = tracing.ContextCarrier{}
 	otel.GetTextMapPropagator().Inject(ctx, orderMessage.TraceContext)
+	orderMessage.TimeEnqueued = time.Now().Format(time.RFC3339)
 	orderMessage.OrderKey = orderKey
-	orderMessage.Pastry = pastry
 	messageBody, err := json.Marshal(*orderMessage)
 
 	if err != nil {
@@ -221,8 +221,20 @@ func (q *OrderQueue) ConsumeOrderQueue(ctx context.Context, processFunction func
 			span.SetAttributes(
 				attribute.Bool("queue.consume.success", false),
 				attribute.String("bakery.order_key", orderMessage.OrderKey),
-				attribute.String("bakery.pastry", orderMessage.Pastry),
 			)
+
+			timeEnqueued, err := time.Parse(time.RFC3339, orderMessage.TimeEnqueued)
+
+			if err != nil {
+				span.AddEvent(
+					fmt.Sprintf("Failed to parse time to determine time on queue: %s", err.Error()),
+				)
+			} else {
+				timeOnQueue := time.Since(timeEnqueued)
+				span.SetAttributes(
+					attribute.Int64("queue.time_on_queue_ms", timeOnQueue.Milliseconds()),
+				)
+			}
 
 			err = processFunction(ctx, orderMessage)
 

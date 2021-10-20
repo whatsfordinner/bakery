@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"hash/fnv"
 	"log"
 	"math/rand"
@@ -12,30 +13,62 @@ import (
 )
 
 func (a *app) bakeOrder(ctx context.Context, orderMessage *orders.OrderMessage) error {
-	_, span := a.tracer.Start(ctx, "processing order")
+	_, span := a.tracer.Start(ctx, "processing-order")
 	defer span.End()
 
 	span.SetAttributes(
 		attribute.String("baker.order_key", orderMessage.OrderKey),
 	)
 
-	err := a.DB.UpdateOrder(ctx, orderMessage.OrderKey, "baking")
+	order, err := a.DB.ReadOrder(ctx, orderMessage.OrderKey)
 
 	if err != nil {
 		span.SetAttributes(
 			attribute.Bool("baker.error", true),
-			attribute.String("baker.error_string", err.Error()),
 		)
+		span.AddEvent(
+			fmt.Sprintf("Failed to read order from DB: %s", err.Error()),
+		)
+
 		return err
 	}
 
-	a.bakePastry(ctx, orderMessage.Pastry)
+	err = a.DB.UpdateOrder(ctx, orderMessage.OrderKey, "baking")
+
+	if err != nil {
+		span.SetAttributes(
+			attribute.Bool("baker.error", true),
+		)
+		span.AddEvent(
+			fmt.Sprintf("Failed to update order: %s", err.Error()),
+		)
+
+		return err
+	}
+
+	a.bakePastry(ctx, order.Pastry)
+
+	timeOrdered, err := time.Parse(time.RFC3339, order.OrderTime)
+
+	if err != nil {
+		span.AddEvent(
+			fmt.Sprintf("Failed to parse order time: %s", err.Error()),
+		)
+	} else {
+		timeToCompletion := time.Since(timeOrdered)
+		span.SetAttributes(
+			attribute.Int64("baker.time_to_completion_ms", timeToCompletion.Milliseconds()),
+		)
+	}
+
 	err = a.DB.UpdateOrder(ctx, orderMessage.OrderKey, "finished")
 
 	if err != nil {
 		span.SetAttributes(
 			attribute.Bool("baker.error", true),
-			attribute.String("baker.error_string", err.Error()),
+		)
+		span.AddEvent(
+			fmt.Sprintf("Failed to update order: %s", err.Error()),
 		)
 		return err
 	}

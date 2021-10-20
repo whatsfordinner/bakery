@@ -44,7 +44,7 @@ func TestBakeOrder(t *testing.T) {
 				t.Fatalf(err.Error())
 			}
 
-			err = a.bakeOrder(context.Background(), &orders.OrderMessage{OrderKey: key, Pastry: test.pastryName})
+			err = a.bakeOrder(context.Background(), &orders.OrderMessage{OrderKey: key})
 
 			if err != nil && !test.shouldErr {
 				t.Fatalf("Expected no error but got %s", err.Error())

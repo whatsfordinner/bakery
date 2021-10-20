@@ -130,7 +130,7 @@ func TestPublishOrderMessage(t *testing.T) {
 				}
 			}
 
-			err := q.PublishOrderMessage(context.Background(), "testkey", "la bombe")
+			err := q.PublishOrderMessage(context.Background(), "testkey")
 
 			if err != nil && !test.shouldErr {
 				t.Fatalf("Expected no error but got %s", err.Error())
@@ -162,7 +162,7 @@ func TestPublishOrderMessage(t *testing.T) {
 }
 
 func TestConsumeOrderQueue(t *testing.T) {
-	goodOrderMessage := &OrderMessage{tracing.ContextCarrier{}, makeKey(NewOrder("homer", "la bombe")), "la bombe"}
+	goodOrderMessage := &OrderMessage{tracing.ContextCarrier{}, "", makeKey(NewOrder("homer", "la bombe"))}
 	goodMessage, _ := json.Marshal(goodOrderMessage)
 	badMessage := []byte("foobarbaz")
 	tests := map[string]struct {
@@ -181,7 +181,7 @@ func TestConsumeOrderQueue(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			goodFunc := func(ctx context.Context, order *OrderMessage) error {
-				if order.OrderKey != goodOrderMessage.OrderKey || order.Pastry != goodOrderMessage.Pastry {
+				if order.OrderKey != goodOrderMessage.OrderKey {
 					t.Fatalf("Received message does not match good message\nExpected: %+v\nGot: %+v", *goodOrderMessage, *order)
 				}
 				return nil

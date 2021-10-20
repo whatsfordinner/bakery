@@ -57,7 +57,7 @@ func (a *app) newOrderHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = a.Queue.PublishOrderMessage(r.Context(), key, orderData.Pastry)
+	err = a.Queue.PublishOrderMessage(r.Context(), key)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
