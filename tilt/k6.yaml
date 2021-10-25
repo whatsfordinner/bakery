@@ -1,0 +1,78 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k6-config
+data:
+  loadtest: |
+    import http from 'k6/http';
+    import { sleep } from 'k6';
+
+    export default function() {
+        var url = 'http://reception:8000/orders'
+        var payload = JSON.stringify({
+            "customer": pickName(),
+            "pastry": pickPastry(),
+        })
+        var params = {
+            headers: {
+                "Content-Type": "applicaion/json"
+            }
+        }
+        http.post(url, payload, params);
+        sleep(1);
+    }
+
+    function pickName() {
+        let names = [
+            "homer",
+            "fry",
+            "tuca",
+            "bertie",
+        ]
+
+        return names[Math.floor(Math.random() * names.length)]
+    }
+
+    function pickPastry() {
+        let pastries = [
+            "croissant",
+            "kouign-amann",
+            "la bombe",
+            "escargot",
+            "almond croissant",
+            "profiterole",
+            "caramel tart",
+        ]
+
+        return pastries[Math.floor(Math.random() * pastries.length)]
+    }
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: k6
+spec:
+  template:
+    spec:
+      containers:
+      - name: k6
+        image: loadimpact/k6:latest
+        args:
+        - "run"
+        - "--vus"
+        - "15"
+        - "--duration"
+        - "15m"
+        - "/tmp/loadtest.js"
+        volumeMounts:
+        - name: k6-config-vol
+          mountPath: /tmp
+      restartPolicy: Never
+      volumes:
+      - configMap:
+          name: k6-config
+          items:
+          - key: loadtest
+            path: loadtest.js
+        name: k6-config-vol

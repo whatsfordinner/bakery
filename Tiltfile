@@ -41,6 +41,7 @@ k8s_yaml('tilt/dependencies.yaml')
 k8s_yaml('tilt/tracing.yaml')
 k8s_yaml('tilt/baker.yaml')
 k8s_yaml('tilt/reception.yaml')
+k8s_yaml('tilt/k6.yaml')
 
 k8s_resource(
   workload='reception',
@@ -56,4 +57,10 @@ k8s_resource(
 k8s_resource(
   workload='jaeger',
   port_forwards=16686
+)
+
+k8s_resource(
+  workload='k6',
+  auto_init=False,
+  trigger_mode=TRIGGER_MODE_MANUAL
 )
